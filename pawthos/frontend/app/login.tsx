@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import * as auth from './auth';
+// Navigation will be passed as props
+import * as auth from '../utils/auth.utils';
 
 const styles = StyleSheet.create({
     container: {
@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
         width: 200,
         paddingVertical: 14,
         borderRadius: 32,
-        backgroundColor: "#045b26",
+        backgroundColor: "#2D941C",
         alignItems: "center",
         marginBottom: 12,
         elevation: 2,
@@ -118,8 +118,7 @@ const styles = StyleSheet.create({
     }
 });
 
-export default function LoginPage() {
-    const router = useRouter();
+export default function LoginPage({ navigation }) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
@@ -132,12 +131,12 @@ export default function LoginPage() {
         const result = await auth.login(username, password);
         setLoading(false);
         if (!result.success) setError(result.message || "Login failed");
-        else router.replace('/main');
+        else navigation.navigate('Main');
     };
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.replace('/')}>
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Welcome')}>
                 <MaterialIcons name="arrow-back" size={28} color="#fff" />
             </TouchableOpacity>
             <View style={styles.logoRow}>
@@ -153,7 +152,7 @@ export default function LoginPage() {
                 />
             </View>
             <Text style={styles.title}>Welcome back!</Text>
-            <Text style={styles.subtitle}>login to your account</Text>
+            <Text style={styles.subtitle}>Login to your account</Text>
             <View style={styles.inputRow}>
                 <FontAwesome name="user" size={22} color="#045b26" />
                 <TextInput
@@ -189,7 +188,7 @@ export default function LoginPage() {
             <Pressable style={styles.button} onPress={handleLogin} disabled={loading}>
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>LOGIN</Text>}
             </Pressable>
-            <Pressable onPress={() => router.replace('/signup')}>
+            <Pressable onPress={() => navigation.navigate('Signup')}>
                 <Text style={[styles.link, { textAlign: 'center', marginTop: 8 }]}>Don't have an account? Sign Up</Text>
             </Pressable>
         </View>

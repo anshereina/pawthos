@@ -12,8 +12,8 @@ const FAQS = [
         answer: 'Navigate to Pet Information > Pet Profile and tap the add button to enter your pet’s details.'
     },
     {
-        question: 'How can I view my pet’s vaccine history?',
-        answer: 'Select Pet Information > Vaccine History to see all recorded vaccinations for your pets.'
+        question: 'How can I view my pet\'s vaccine records?',
+        answer: 'Select Pet Information > Vaccine Records to see all recorded vaccinations for your pets.'
     },
     {
         question: 'How do I get a shipping permit?',

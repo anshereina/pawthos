@@ -1,7 +1,5 @@
 import React from "react";
 import { Text, View, Image, Pressable, StyleSheet } from "react-native";
-import { useFonts } from 'expo-font';
-import { useRouter } from 'expo-router';
 
 const styles = StyleSheet.create({
   container: {
@@ -56,12 +54,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function Index() {
-  const [fontsLoaded] = useFonts({
-    IrishGrover: require('../assets/fonts/IrishGrover-Regular.ttf'),
-  });
-  const router = useRouter();
-  if (!fontsLoaded) return null;
+export default function Index({ navigation }) {
 
   return (
     <View style={styles.container}>
@@ -80,10 +73,10 @@ export default function Index() {
       <Text style={styles.title}>PawThos</Text>
       <Text style={styles.subtitle}>Welcome to your pet care companion</Text>
       <View style={{ height: 48 }} />
-      <Pressable style={[styles.button, { backgroundColor: '#045b26' }]} onPress={() => router.push('/login')}>
+      <Pressable style={[styles.button, { backgroundColor: '#2D941C' }]} onPress={() => navigation.navigate('Login')}>
         <Text style={[styles.buttonText, { color: '#fff' }]}>LOGIN</Text>
       </Pressable>
-      <Pressable style={[styles.button, { backgroundColor: '#e0ffe6' }]} onPress={() => router.push('/signup')}>
+      <Pressable style={[styles.button, { backgroundColor: '#e0ffe6' }]} onPress={() => navigation.navigate('Signup')}>
         <Text style={[styles.buttonText, { color: '#045b26' }]}>SIGN UP</Text>
       </Pressable>
     </View>
