@@ -87,3 +87,7 @@ venv.bak/
 
 # Logs
 *.log
+
+# Large model files
+*.pth
+best_efficientnet_model.pth
