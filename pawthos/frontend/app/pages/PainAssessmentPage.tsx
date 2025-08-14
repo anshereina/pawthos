@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Alert, Activity
 import { MaterialIcons } from '@expo/vector-icons';
 import { getPainAssessments, PainAssessmentRecord, formatAssessmentDate, getPainLevelColor } from '../../utils/painAssessments.utils';
 import { isAuthenticated } from '../../utils/auth.utils';
+import PainAssessmentDetailsModal from '../modals/PainAssessmentDetailsModal';
 
 const styles = StyleSheet.create({
     container: { 
@@ -152,6 +153,8 @@ export default function PainAssessmentPage({ onNavigate }: { onNavigate: (page: 
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [selectedRecord, setSelectedRecord] = useState<PainAssessmentRecord | null>(null);
 
     useEffect(() => {
         checkAuthAndLoadAssessments();
@@ -230,8 +233,8 @@ export default function PainAssessmentPage({ onNavigate }: { onNavigate: (page: 
     };
 
     const handleRecordPress = (record: PainAssessmentRecord) => {
-        // Navigate to detailed view of the assessment
-        onNavigate('PainAssessmentDetail', { record });
+        setSelectedRecord(record);
+        setModalVisible(true);
     };
 
     return (
@@ -335,7 +338,12 @@ export default function PainAssessmentPage({ onNavigate }: { onNavigate: (page: 
                 )}
             </View>
 
-
+            {/* Pain Assessment Details Modal */}
+            <PainAssessmentDetailsModal
+                visible={modalVisible}
+                onClose={() => setModalVisible(false)}
+                record={selectedRecord}
+            />
         </SafeAreaView>
     );
 }

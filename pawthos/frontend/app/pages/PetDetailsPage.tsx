@@ -7,32 +7,30 @@ import { isAuthenticated } from '../../utils/auth.utils';
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#f7f7f7' 
-    },
+        backgroundColor: 'transparent',
+        },
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 5,
-        paddingVertical: 16,
-        elevation: 2,
+        position: 'absolute',
+        top: 50,
+        left: 20,
+        zIndex: 10,
+        backgroundColor: 'transparent',
     },
     backButton: {
         padding: 8,
-        marginRight: 16,
-    },
-    title: { 
-        fontSize: 23, 
-        fontWeight: 'bold', 
-        color: '#000' 
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: 20,
     },
     content: {
         flex: 1,
     },
     petImageContainer: {
-        height: 300,
+        height: 500,
         backgroundColor: '#e0ffe6',
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'relative',
+        marginTop: -50,
     },
     petImage: {
         width: '100%',
@@ -48,47 +46,58 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     mainInfoSection: {
-        backgroundColor: '#e0ffe6',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
+        backgroundColor: '#A1D998',
+        borderTopLeftRadius: 40,
+        borderTopRightRadius: 40,
         paddingHorizontal: 24,
-        paddingTop: 24,
-        paddingBottom: 20,
-        marginTop: -20,
+        paddingTop: 15,
+        paddingBottom: 10,
+        marginTop: -30,
     },
     petName: {
-        fontSize: 32,
+        fontSize: 36,
         fontWeight: 'bold',
         color: '#045b26',
         marginBottom: 8,
+        textShadowColor: '#fff',
+        textShadowOffset: { width: 1, height: 1 },
+        textShadowRadius: 2,
     },
     petId: {
-        fontSize: 16,
-        color: '#045b26',
-        marginBottom: 20,
+        fontSize: 14,
+        color: '#000',
+        marginBottom: 0,
+        fontWeight: 'normal',
+    },
+    petNameIdSection: {
+        position: 'absolute',
+        bottom: 60,
+        left: 20,
+        backgroundColor: 'transparent',
     },
     actionButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        marginBottom: 30,
     },
     primaryButton: {
         backgroundColor: '#045b26',
-        borderRadius: 12,
+        borderRadius: 20,
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 8,
         flex: 1,
-        marginRight: 12,
+        marginRight: 8,
         alignItems: 'center',
         justifyContent: 'center',
+        elevation: 1,
     },
     secondaryButton: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
+        backgroundColor: 'transparent',
+        borderRadius: 20,
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 8,
         flex: 1,
-        marginLeft: 12,
+        marginLeft: 8,
         borderWidth: 1,
         borderColor: '#045b26',
         alignItems: 'center',
@@ -96,19 +105,20 @@ const styles = StyleSheet.create({
     },
     primaryButtonText: {
         color: '#fff',
-        fontWeight: 'bold',
+        fontWeight: '600',
         fontSize: 12,
         textAlign: 'center',
     },
     secondaryButtonText: {
         color: '#045b26',
-        fontWeight: 'bold',
+        fontWeight: '600',
         fontSize: 12,
         textAlign: 'center',
     },
     detailsGrid: {
+        backgroundColor: '#A1D998',
         paddingHorizontal: 24,
-        paddingTop: 20,
+        paddingTop: 5,
         paddingBottom: 24,
     },
     gridRow: {
@@ -249,14 +259,13 @@ export default function PetDetailsPage({
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
+                <View style={[styles.header, { top: 20 }]}>
                     <TouchableOpacity 
                         style={styles.backButton}
                         onPress={() => onNavigate('Pet profile')}
                     >
                         <MaterialIcons name="arrow-back" size={28} color="#045b26" />
                     </TouchableOpacity>
-                    <Text style={styles.title}>Pet Profile</Text>
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#045b26" />
@@ -269,14 +278,13 @@ export default function PetDetailsPage({
     if (error || !petData) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
+                <View style={[styles.header, { top: 20 }]}>
                     <TouchableOpacity 
                         style={styles.backButton}
                         onPress={() => onNavigate('Pet profile')}
                     >
                         <MaterialIcons name="arrow-back" size={28} color="#045b26" />
                     </TouchableOpacity>
-                    <Text style={styles.title}>Pet Profile</Text>
                 </View>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
@@ -302,17 +310,6 @@ export default function PetDetailsPage({
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={() => onNavigate('Pet profile')}
-                >
-                    <MaterialIcons name="arrow-back" size={28} color="#045b26" />
-                </TouchableOpacity>
-                <Text style={styles.title}>Pet Profile</Text>
-            </View>
-
             <ScrollView style={styles.content}>
                 {/* Pet Image */}
                 <View style={styles.petImageContainer}>
@@ -323,32 +320,45 @@ export default function PetDetailsPage({
                             <MaterialIcons name="pets" size={48} color="#fff" />
                         </View>
                     )}
+                    
+                    {/* Back Button - Overlay on Image */}
+                    <View style={styles.header}>
+                        <TouchableOpacity 
+                            style={styles.backButton}
+                            onPress={() => onNavigate('Pet profile')}
+                        >
+                            <MaterialIcons name="arrow-back" size={28} color="#045b26" />
+                        </TouchableOpacity>
+                    </View>
+                    
+                    {/* Pet Name and ID - Overlay on Image */}
+                    <View style={styles.petNameIdSection}>
+                        <Text style={styles.petName}>{petData.name}</Text>
+                        <Text style={styles.petId}>Pet ID: {petData.pet_id}</Text>
+                    </View>
                 </View>
 
                 {/* Main Information Section */}
                 <View style={styles.mainInfoSection}>
-                    <Text style={styles.petName}>{petData.name}</Text>
-                    <Text style={styles.petId}>Pet ID: {petData.pet_id}</Text>
-                    
+                </View>
+
+                {/* Detailed Information Grid */}
+                <View style={styles.detailsGrid}>
                     {/* Action Buttons */}
                     <View style={styles.actionButtons}>
                         <TouchableOpacity 
                             style={styles.primaryButton}
                             onPress={() => onNavigate('Pet MedRecords')}
                         >
-                            <Text style={styles.primaryButtonText}>View Medical Records</Text>
+                            <Text style={styles.primaryButtonText}>View Medical History</Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
                             style={styles.secondaryButton}
                             onPress={() => onNavigate('Pet VacCard')}
                         >
-                            <Text style={styles.secondaryButtonText}>View Pet VacCard</Text>
+                            <Text style={styles.secondaryButtonText}>View Medical History</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
-
-                {/* Detailed Information Grid */}
-                <View style={styles.detailsGrid}>
                     {/* Top Row */}
                     <View style={styles.gridRow}>
                         <View style={styles.detailCard}>

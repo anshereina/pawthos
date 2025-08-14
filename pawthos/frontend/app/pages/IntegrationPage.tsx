@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, Modal, Pressable, Alert, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createPainAssessment } from '../../utils/painAssessments.utils';
+
 
 export default function IntegrationPage({ onSelect }: { onSelect: (label: string) => void }) {
   const [modalVisible, setModalVisible] = useState(false);
@@ -50,20 +50,21 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
           console.log(`Checking pet ${pet.name}: species="${pet.species}" (lowercase: "${petSpecies}")`);
           
           if (selectedPet === 'DOG') {
-            // Show only Canine species for dogs
-            const isDog = petSpecies === 'canine';
-            console.log(`  Is dog (canine)? ${isDog}`);
+            // Show dogs - check for both "dog" and "canine"
+            const isDog = petSpecies === 'dog' || petSpecies === 'canine';
+            console.log(`  Is dog? ${isDog}`);
             return isDog;
           } else if (selectedPet === 'CAT') {
-            // Show only Feline species for cats
-            const isCat = petSpecies === 'feline';
-            console.log(`  Is cat (feline)? ${isCat}`);
+            // Show cats - check for both "cat" and "feline"
+            const isCat = petSpecies === 'cat' || petSpecies === 'feline';
+            console.log(`  Is cat? ${isCat}`);
             return isCat;
           }
           return true;
         });
         setRegisteredPets(filteredPets);
         console.log('Filtered pets for', selectedPet, ':', filteredPets);
+        console.log('Current selectedRegisteredPet state:', selectedRegisteredPet);
         
         // If no pets found, show a helpful message
         if (filteredPets.length === 0 && pets.length > 0) {
@@ -85,31 +86,22 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
   const handlePetSelect = async (pet: string) => {
     setSelectedPet(pet);
     
-    try {
-      // Create initial pain assessment record
-      const result = await createPainAssessment({
-        pet_id: 1, // Default pet ID - will be updated when user selects specific pet
-        pet_name: "Pet", // Default name - will be updated when user selects specific pet
-        pet_type: pet,
-        pain_level: "Pending Assessment",
-        assessment_date: new Date().toISOString().split('T')[0],
-        recommendations: "Assessment in progress..."
-      });
-      
-      if (result.success && result.data) {
-        console.log('Pain assessment created with ID:', result.data.id);
-        // Store the assessment ID for use in subsequent pages
-        await AsyncStorage.setItem('currentAssessmentId', result.data.id.toString());
-      } else {
-        console.error('Failed to create pain assessment:', result.message);
-        Alert.alert('Error', 'Failed to start pain assessment. Please try again.');
-        return;
-      }
-    } catch (error) {
-      console.error('Error creating pain assessment:', error);
-      Alert.alert('Error', 'Failed to start pain assessment. Please try again.');
-      return;
-    }
+    // Store assessment data locally instead of creating in database
+    const assessmentData = {
+      pet_id: 1, // Default pet ID - will be updated when user selects specific pet
+      pet_name: "Pet", // Default name - will be updated when user selects specific pet
+      pet_type: pet,
+      pain_level: "Pending Assessment",
+      assessment_date: new Date().toISOString().split('T')[0],
+      recommendations: "Assessment in progress...",
+      basic_answers: null,
+      assessment_answers: null,
+      questions_completed: false
+    };
+    
+    // Store the assessment data in AsyncStorage
+    await AsyncStorage.setItem('currentAssessmentData', JSON.stringify(assessmentData));
+    console.log('Assessment data stored locally:', assessmentData);
     
     setModalVisible(true);
   };
@@ -129,6 +121,7 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
       console.log('Setting showSecondModal to true');
       setTimeout(() => {
         console.log('Showing second modal');
+        setSelectedRegisteredPet(null); // Reset selection when modal opens
         setShowSecondModal(true);
       }, 300); // slight delay for smooth transition
     }
@@ -138,33 +131,33 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
     setShowSecondModal(false);
     
     if (selectedRegisteredPet) {
-      // Update the pain assessment with the selected pet's information
+      // Update the local assessment data with the selected pet's information
       try {
-        const assessmentId = await AsyncStorage.getItem('currentAssessmentId');
-        if (assessmentId) {
+        const assessmentDataString = await AsyncStorage.getItem('currentAssessmentData');
+        console.log('Updating local assessment data with selected pet ID:', selectedRegisteredPet);
+        
+        if (assessmentDataString) {
+          const assessmentData = JSON.parse(assessmentDataString);
           const selectedPetData = registeredPets.find(pet => pet.id === selectedRegisteredPet);
+          console.log('Selected pet data:', selectedPetData);
+          
           if (selectedPetData) {
-            // Update the assessment with the selected pet's details
-            const updateResult = await fetch(`http://192.168.1.8:8001/api/pain-assessments/${assessmentId}`, {
-              method: 'PATCH',
-              headers: {
-                'Authorization': `Bearer ${await AsyncStorage.getItem('authToken')}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                pet_id: selectedPetData.id,
-                pet_name: selectedPetData.name,
-                pet_type: selectedPetData.species === 'canine' ? 'Dog' : 'Cat'
-              }),
-            });
+            // Update the assessment data with the selected pet's details
+            assessmentData.pet_id = selectedPetData.id;
+            assessmentData.pet_name = selectedPetData.name;
+            assessmentData.pet_type = selectedPetData.species === 'canine' ? 'Dog' : 'Cat';
             
-            if (!updateResult.ok) {
-              console.error('Failed to update assessment with pet details');
-            }
+            console.log('Updated assessment data:', assessmentData);
+            
+            // Store the updated assessment data back to AsyncStorage
+            await AsyncStorage.setItem('currentAssessmentData', JSON.stringify(assessmentData));
+            console.log('Successfully updated local assessment data with pet details');
+          } else {
+            console.error('Selected pet data not found for ID:', selectedRegisteredPet);
           }
         }
       } catch (error) {
-        console.error('Error updating assessment with pet details:', error);
+        console.error('Error updating local assessment data with pet details:', error);
       }
     }
     
@@ -193,6 +186,7 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.topBorder} />
       <View style={styles.buttonContainer}>
         <View style={styles.textContainer}>
           <Text style={styles.logo}>PawThos</Text>
@@ -268,7 +262,9 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
                   styles.dropdownText,
                   !selectedRegisteredPet && styles.placeholderText
                 ]}>
-                  {selectedRegisteredPet || getDropdownPlaceholder()}
+                  {selectedRegisteredPet && registeredPets.find(pet => pet.id === selectedRegisteredPet) ? 
+                    registeredPets.find(pet => pet.id === selectedRegisteredPet)?.name : 
+                    getDropdownPlaceholder()}
                 </Text>
               </Pressable>
               {/* Dropdown list - only show when dropdown is open */}
@@ -284,7 +280,7 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
                         key={pet.id}
                         style={styles.dropdownItem}
                         onPress={() => {
-                          setSelectedRegisteredPet(pet.name);
+                          setSelectedRegisteredPet(pet.id);
                           setDropdownOpen(false);
                         }}
                       >
@@ -326,10 +322,18 @@ export default function IntegrationPage({ onSelect }: { onSelect: (label: string
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#045b26', // dark green
+    backgroundColor: '#f8f9fa', // light white
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 20,
+  },
+  topBorder: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 4,
+    backgroundColor: '#045b26', // green line at top
   },
   buttonContainer: {
     width: '100%',
@@ -344,33 +348,37 @@ const styles = StyleSheet.create({
   logo: {
     fontFamily: 'IrishGrover',
     fontSize: 64,
-    color: '#fff',
+    color: '#D37F52', // warm, brownish-orange color
     fontWeight: 'bold',
-    marginBottom: 12,
+    marginBottom: 16,
     textAlign: 'center',
   },
   prompt: {
     fontSize: 20,
-    color: '#b6e2b6', // light green
+    color: '#045b26', // green, sans-serif font
     fontFamily: 'sans-serif',
-    marginBottom: 16,
+    marginBottom: 32,
     textAlign: 'center',
   },
   petButton: {
-    width: 180,
-    height: 50,
-    backgroundColor: '#8B5C2A', // brown
-    borderRadius: 15,
+    width: 160,
+    height: 48,
+    backgroundColor: '#045b26', // dark green
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
-    elevation: 4,
+    marginBottom: 12,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-    letterSpacing: 1,
+    fontSize: 18,
+    fontWeight: '600',
+    letterSpacing: 0.5,
     textTransform: 'uppercase',
   },
   modalOverlay: {
@@ -381,9 +389,9 @@ const styles = StyleSheet.create({
   },
   modalBox: {
     width: 340,
-    backgroundColor: 'rgba(240, 248, 240, 0.95)', // light green with reduced opacity - same as second modal
+    backgroundColor: 'rgba(240, 248, 240, 0.95)', 
     borderRadius: 28,
-    padding: 36,
+    padding: 30,
     alignItems: 'center',
     elevation: 10,
     zIndex: 100,
@@ -411,14 +419,16 @@ const styles = StyleSheet.create({
   modalOptionBtn: {
     flex: 1,
     marginHorizontal: 8,
-    paddingVertical: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 12,
     backgroundColor: '#045b26', // dark green - same as appointment modal
     alignItems: 'center',
+    maxWidth: 100,
   },
   modalOptionText: {
     color: '#fff', // white - same as appointment modal
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'normal',
   },
   // Second modal styles
@@ -426,7 +436,7 @@ const styles = StyleSheet.create({
     width: 340,
     backgroundColor: 'rgba(240, 248, 240, 0.95)', // light green with reduced opacity
     borderRadius: 28,
-    padding: 36,
+    padding: 30,
     alignItems: 'center',
     elevation: 10,
     zIndex: 100,
@@ -436,18 +446,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#000', // black - same as appointment modal
     fontWeight: 'bold',
-    marginBottom: 28,
+    marginBottom: 15,
     textAlign: 'center',
   },
 
   nextButton: {
     width: 140,
-    height: 48,
+    height: 30,
     backgroundColor: '#045b26', // dark green - same as appointment modal
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: -10,
     elevation: 2,
     zIndex: 1,
   },

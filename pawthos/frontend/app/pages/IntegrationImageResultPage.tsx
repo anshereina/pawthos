@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#045b26',
+    backgroundColor: '#f8f9fa',
   },
   content: {
     flex: 1,
@@ -21,7 +21,7 @@ const styles = StyleSheet.create({
   },
   capturedImage: {
     width: 300,
-    height: 300,
+    height: 420,
     borderRadius: 20,
     backgroundColor: '#b6e2b6',
     justifyContent: 'center',
@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
   },
   imagePlaceholder: {
     width: 280,
-    height: 280,
+    height: 400,
     borderRadius: 16,
     backgroundColor: '#e0ffe6',
     justifyContent: 'center',
@@ -44,26 +44,27 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   buttonContainer: {
-    width: '100%',
+    width: '70%',
     paddingBottom: 40,
   },
   actionButton: {
     backgroundColor: '#D37F52',
-    borderRadius: 16,
-    paddingVertical: 18,
+    borderRadius: 12,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    marginBottom: 16,
-    elevation: 4,
+    marginBottom: 12,
+    elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
   buttonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
 });
 

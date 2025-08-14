@@ -175,6 +175,21 @@ class PainAssessment(Base):
     questions_completed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
+class VaccinationRecord(Base):
+    __tablename__ = "vaccination_records"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    pet_id = Column(Integer, nullable=False)
+    user_id = Column(Integer, nullable=False)
+    vaccine_name = Column(String, nullable=False)
+    vaccination_date = Column(String, nullable=False)
+    expiration_date = Column(String, nullable=True)
+    next_vaccination_date = Column(String, nullable=True)
+    veterinarian = Column(String, nullable=True)
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=True)
+
 # Create tables
 Base.metadata.create_all(bind=engine)
 
@@ -293,6 +308,27 @@ class PainAssessmentResponse(BaseModel):
     basic_answers: Optional[str] = None
     assessment_answers: Optional[str] = None
     questions_completed: Optional[bool] = None
+    created_at: datetime
+
+class VaccinationRecordCreate(BaseModel):
+    pet_id: int
+    vaccine_name: str
+    vaccination_date: str
+    expiration_date: Optional[str] = None
+    next_vaccination_date: Optional[str] = None
+    veterinarian: Optional[str] = None
+    notes: Optional[str] = None
+
+class VaccinationRecordResponse(BaseModel):
+    id: int
+    pet_id: int
+    user_id: int
+    vaccine_name: str
+    vaccination_date: str
+    expiration_date: Optional[str] = None
+    next_vaccination_date: Optional[str] = None
+    veterinarian: Optional[str] = None
+    notes: Optional[str] = None
     created_at: datetime
 
 # Dependency to get database session
@@ -1081,6 +1117,8 @@ def update_pain_assessment(assessment_id: int, update_data: dict, current_user: 
             raise HTTPException(status_code=404, detail="Pain assessment not found")
         
         # Update fields if provided
+        if 'pet_id' in update_data:
+            assessment.pet_id = update_data['pet_id']
         if 'pet_name' in update_data:
             assessment.pet_name = update_data['pet_name']
         if 'pet_type' in update_data:
@@ -1121,6 +1159,150 @@ def update_pain_assessment(assessment_id: int, update_data: dict, current_user: 
     except Exception as e:
         print(f"Update pain assessment error: {e}")
         raise HTTPException(status_code=500, detail="Server error updating pain assessment")
+
+# Vaccination Records Endpoints
+@app.get("/api/vaccination-records", response_model=List[VaccinationRecordResponse])
+def get_vaccination_records(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get all vaccination records for the current user's pets"""
+    try:
+        # Get all pets owned by the current user
+        user_pets = db.query(Pet).filter(Pet.id.in_(
+            db.query(Pet.id).filter(Pet.owner_name == current_user.name)
+        )).all()
+        
+        pet_ids = [pet.id for pet in user_pets]
+        
+        # Get vaccination records for user's pets
+        vaccination_records = db.query(VaccinationRecord).filter(
+            VaccinationRecord.pet_id.in_(pet_ids),
+            VaccinationRecord.user_id == current_user.id
+        ).all()
+        
+        return [
+            VaccinationRecordResponse(
+                id=record.id,
+                pet_id=record.pet_id,
+                user_id=record.user_id,
+                vaccine_name=record.vaccine_name,
+                vaccination_date=record.vaccination_date,
+                expiration_date=record.expiration_date,
+                next_vaccination_date=record.next_vaccination_date,
+                veterinarian=record.veterinarian,
+                notes=record.notes,
+                created_at=record.created_at
+            )
+            for record in vaccination_records
+        ]
+        
+    except Exception as e:
+        print(f"Get vaccination records error: {e}")
+        raise HTTPException(status_code=500, detail="Server error fetching vaccination records")
+
+@app.post("/api/vaccination-records", response_model=VaccinationRecordResponse)
+def create_vaccination_record(
+    vaccination_data: VaccinationRecordCreate, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    """Create a new vaccination record"""
+    try:
+        # Verify the pet belongs to the current user
+        pet = db.query(Pet).filter(
+            Pet.id == vaccination_data.pet_id,
+            Pet.owner_name == current_user.name
+        ).first()
+        
+        if not pet:
+            raise HTTPException(status_code=404, detail="Pet not found or not owned by user")
+        
+        # Create new vaccination record
+        vaccination_record = VaccinationRecord(
+            pet_id=vaccination_data.pet_id,
+            user_id=current_user.id,
+            vaccine_name=vaccination_data.vaccine_name,
+            vaccination_date=vaccination_data.vaccination_date,
+            expiration_date=vaccination_data.expiration_date,
+            next_vaccination_date=vaccination_data.next_vaccination_date,
+            veterinarian=vaccination_data.veterinarian,
+            notes=vaccination_data.notes
+        )
+        
+        db.add(vaccination_record)
+        db.commit()
+        db.refresh(vaccination_record)
+        
+        return VaccinationRecordResponse(
+            id=vaccination_record.id,
+            pet_id=vaccination_record.pet_id,
+            user_id=vaccination_record.user_id,
+            vaccine_name=vaccination_record.vaccine_name,
+            vaccination_date=vaccination_record.vaccination_date,
+            expiration_date=vaccination_record.expiration_date,
+            next_vaccination_date=vaccination_record.next_vaccination_date,
+            veterinarian=vaccination_record.veterinarian,
+            notes=vaccination_record.notes,
+            created_at=vaccination_record.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Create vaccination record error: {e}")
+        raise HTTPException(status_code=500, detail="Server error creating vaccination record")
+
+@app.get("/api/vaccination-records/{record_id}", response_model=VaccinationRecordResponse)
+def get_vaccination_record(record_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get a specific vaccination record"""
+    try:
+        record = db.query(VaccinationRecord).filter(
+            VaccinationRecord.id == record_id,
+            VaccinationRecord.user_id == current_user.id
+        ).first()
+        
+        if not record:
+            raise HTTPException(status_code=404, detail="Vaccination record not found")
+        
+        return VaccinationRecordResponse(
+            id=record.id,
+            pet_id=record.pet_id,
+            user_id=record.user_id,
+            vaccine_name=record.vaccine_name,
+            vaccination_date=record.vaccination_date,
+            expiration_date=record.expiration_date,
+            next_vaccination_date=record.next_vaccination_date,
+            veterinarian=record.veterinarian,
+            notes=record.notes,
+            created_at=record.created_at
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Get vaccination record error: {e}")
+        raise HTTPException(status_code=500, detail="Server error fetching vaccination record")
+
+@app.delete("/api/vaccination-records/{record_id}")
+def delete_vaccination_record(record_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Delete a vaccination record"""
+    try:
+        record = db.query(VaccinationRecord).filter(
+            VaccinationRecord.id == record_id,
+            VaccinationRecord.user_id == current_user.id
+        ).first()
+        
+        if not record:
+            raise HTTPException(status_code=404, detail="Vaccination record not found")
+        
+        db.delete(record)
+        db.commit()
+        
+        return {"message": "Vaccination record deleted successfully"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete vaccination record error: {e}")
+        raise HTTPException(status_code=500, detail="Server error deleting vaccination record")
 
 if __name__ == "__main__":
     import uvicorn

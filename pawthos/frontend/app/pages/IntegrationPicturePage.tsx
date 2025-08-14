@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicat
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updatePainAssessment } from '../../utils/painAssessments.utils';
+
 
 interface IntegrationPicturePageProps {
   onResult: (result: string, imageUri?: string) => void;
@@ -13,7 +13,7 @@ interface IntegrationPicturePageProps {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#045b26',
+    backgroundColor: '#f8f9fa',
   },
   headerContainer: {
     flexDirection: 'row',
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   sectionTitle: {
-    color: '#fff',
+    color: '#045b26',
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: '#fff',
+    borderColor: '#045b26',
   },
   listItem: {
     flexDirection: 'row',
@@ -74,27 +74,29 @@ const styles = StyleSheet.create({
   },
   listText: {
     flex: 1,
-    color: '#b6e2b6',
+    color: '#4a7c59',
     fontSize: 14,
     lineHeight: 20,
   },
   actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
+    marginTop: -20,
   },
   takePhotoButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 110,
+    height: 110,
+    borderRadius: 100,
     backgroundColor: '#D37F52',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-    elevation: 8,
+    elevation: 6,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
   },
   buttonIconContainer: {
     alignItems: 'center',
@@ -107,24 +109,26 @@ const styles = StyleSheet.create({
   },
   takePhotoText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
+    marginTop: 4,
   },
   libraryButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#D37F52',
     borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
     elevation: 4,
+    minWidth: 140,
   },
   libraryButtonText: {
     color: '#fff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
-    marginLeft: 8,
+    marginLeft: 6,
   },
   loadingOverlay: {
     ...StyleSheet.absoluteFillObject,
@@ -214,28 +218,26 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
     })();
   }, []);
 
-  const saveImageResultToDatabase = async (painLevel: string, imageUri: string) => {
+  const saveImageResultToLocalStorage = async (painLevel: string, imageUri: string) => {
     try {
-      const assessmentId = await AsyncStorage.getItem('currentAssessmentId');
-      if (!assessmentId) {
-        console.error('No assessment ID found');
+      const assessmentDataString = await AsyncStorage.getItem('currentAssessmentData');
+      if (!assessmentDataString) {
+        console.log('No assessment data found - this is normal for new assessments');
         return;
       }
 
-      // Update the assessment with the image and prediction result
-      const result = await updatePainAssessment(parseInt(assessmentId), {
-        pain_level: painLevel,
-        image_url: imageUri,
-        recommendations: `AI Analysis Result: ${painLevel}. Image captured and analyzed successfully.`
-      });
+      const assessmentData = JSON.parse(assessmentDataString);
+      
+      // Update the assessment data with the image and prediction result
+      assessmentData.pain_level = painLevel;
+      assessmentData.image_url = imageUri;
+      assessmentData.recommendations = `AI Analysis Result: ${painLevel}. Image captured and analyzed successfully.`;
 
-      if (!result.success) {
-        console.error('Failed to save image result:', result.message);
-      } else {
-        console.log('Image result saved successfully');
-      }
+      // Store the updated assessment data back to AsyncStorage
+      await AsyncStorage.setItem('currentAssessmentData', JSON.stringify(assessmentData));
+      console.log('Image result saved to local storage successfully');
     } catch (error) {
-      console.error('Error saving image result:', error);
+      console.error('Error saving image result to local storage:', error);
     }
   };
 
@@ -290,8 +292,8 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
 
           // Navigate to the result page with the prediction and image
           if (response.ok) {
-            // Save the image and prediction result to database
-            await saveImageResultToDatabase(result.pain_level, photo.uri);
+            // Save the image and prediction result to local storage
+            await saveImageResultToLocalStorage(result.pain_level, photo.uri);
             onResult(result.pain_level, photo.uri);
           } else {
             console.error('API Error:', result);

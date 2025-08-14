@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updatePainAssessment } from '../../utils/painAssessments.utils';
+
 
 const DOG_QUESTIONS = [
   'My dog is licking at one area obsessively',
@@ -26,13 +26,20 @@ const DOG_ASSESSMENT_QUESTIONS = [
 ];
 
 const CAT_QUESTIONS = [
-  'My cat shows less desire to interact with people or animals (hides, resists being petted, brushed, held, or picked up).',
-  'My cat excessively licks, bites, or scratches a specific body part.',
-  'My cat sleeps in an unusual position or location.',
-  'My cat shows unusual aggression when approached or touched (biting, hissing, ears pinned back).',
-  "My cat's eye expression has changed (staring, enlarged pupils, vacant look, or squinting).",
-  'My cat has stopped using or has difficulty getting in or out of the litter box.',
-  'My cat has stopped grooming completely or avoids grooming certain areas.',
+  'Reluctance to jump onto counters or furniture (does it less)',
+  'Difficulty jumping up or down from counters or furniture (falls or seems clumsy)',
+  'Difficulty or avoids going up or down stairs',
+  'Less playful',
+  'Restlessness or difficulty finding a comfortable position',
+  'Vocalizing (purring, or hissing) when touched or moving',
+  'Decreased appetite',
+  'Less desire to interact with people or animals (hiding, resisting being pet, brushed, held, or picked up)',
+  'Excessive licking, biting or scratching a body part',
+  'Sleeping in an unusual position or unusual location',
+  'Unusual aggression when approached or touched (biting, hissing, ears pinned back)',
+  'Changes in eye expression (staring, enlarged pupils, vacant look, or squinting)',
+  'Stopped using or has difficulty getting in or out of litter box',
+  'Stopped grooming completely or certain areas',
 ];
 
 const PAW_WATERMARK_SIZE = 260;
@@ -71,46 +78,37 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
     if (petType === 'dog' && !showAssessment) {
       setShowAssessment(true);
     } else if (petType === 'dog' && showAssessment) {
-      // Save answers to database before proceeding
-      await saveAnswersToDatabase();
+      // Save answers to local storage before proceeding
+      await saveAnswersToLocalStorage();
       onNext(); // This will navigate to Integration Picture Page
     } else {
-      // Save answers to database before proceeding
-      await saveAnswersToDatabase();
+      // Save answers to local storage before proceeding
+      await saveAnswersToLocalStorage();
       onNext();
     }
   };
 
-  const saveAnswersToDatabase = async () => {
+  const saveAnswersToLocalStorage = async () => {
     try {
-      const assessmentId = await AsyncStorage.getItem('currentAssessmentId');
-      if (!assessmentId) {
-        console.error('No assessment ID found');
+      const assessmentDataString = await AsyncStorage.getItem('currentAssessmentData');
+      if (!assessmentDataString) {
+        console.error('No assessment data found');
         return;
       }
 
-      // Prepare answers data
-      const answersData = {
-        basic_answers: answers,
-        assessment_answers: petType === 'dog' ? assessmentAnswers : null,
-        questions_completed: true
-      };
+      const assessmentData = JSON.parse(assessmentDataString);
+      
+      // Update the assessment data with answers
+      assessmentData.basic_answers = JSON.stringify(answers);
+      assessmentData.assessment_answers = petType === 'dog' ? JSON.stringify(assessmentAnswers) : null;
+      assessmentData.questions_completed = true;
+      assessmentData.recommendations = `Assessment completed. Basic answers: ${answers.filter(a => a === true).length}/${answers.length} positive. ${petType === 'dog' ? `Assessment answers: ${assessmentAnswers.filter(a => a === true).length}/${assessmentAnswers.length} positive.` : ''}`;
 
-      // Update the assessment with answers
-      const result = await updatePainAssessment(parseInt(assessmentId), {
-        basic_answers: JSON.stringify(answers),
-        assessment_answers: petType === 'dog' ? JSON.stringify(assessmentAnswers) : null,
-        questions_completed: true,
-        recommendations: `Assessment completed. Basic answers: ${answers.filter(a => a === true).length}/${answers.length} positive. ${petType === 'dog' ? `Assessment answers: ${assessmentAnswers.filter(a => a === true).length}/${assessmentAnswers.length} positive.` : ''}`
-      });
-
-      if (!result.success) {
-        console.error('Failed to save answers:', result.message);
-      } else {
-        console.log('Answers saved successfully');
-      }
+      // Store the updated assessment data back to AsyncStorage
+      await AsyncStorage.setItem('currentAssessmentData', JSON.stringify(assessmentData));
+      console.log('Answers saved to local storage successfully');
     } catch (error) {
-      console.error('Error saving answers:', error);
+      console.error('Error saving answers to local storage:', error);
     }
   };
 
@@ -254,10 +252,10 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#045b26',
-  },
+      container: {
+      flex: 1,
+      backgroundColor: '#f8f9fa',
+    },
   watermarkContainer: {
     position: 'absolute',
     top: '30%',
@@ -275,16 +273,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 28,
+    fontSize: 23,
     color: '#D37F52',
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
     marginTop: 12,
   },
   instructions: {
     fontSize: 18,
-    color: '#b6e2b6',
+    color: '#045b26',
     textAlign: 'center',
     marginBottom: 24,
   },
@@ -309,7 +307,7 @@ const styles = StyleSheet.create({
   },
   questionText: {
     flex: 1,
-    color: '#fff',
+    color: '#4a7c59',
     fontSize: 16,
     marginRight: 8,
   },
@@ -342,15 +340,16 @@ const styles = StyleSheet.create({
   navButton: {
     flex: 1,
     backgroundColor: '#D37F52',
-    borderRadius: 16,
+    borderRadius: 12,
     marginHorizontal: 8,
-    paddingVertical: 18,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
     alignItems: 'center',
     elevation: 2,
   },
   navButtonText: {
     color: '#fff',
-    fontSize: 20,
+    fontSize: 16,
     fontWeight: 'bold',
     letterSpacing: 1,
   },

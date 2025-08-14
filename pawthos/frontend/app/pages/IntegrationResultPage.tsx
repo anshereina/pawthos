@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { updatePainAssessment } from '../../utils/painAssessments.utils';
+import { createPainAssessment } from '../../utils/painAssessments.utils';
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#045b26', // Dark green background
+        backgroundColor: '#f8f9fa', // Light white background
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 24,
@@ -91,47 +91,63 @@ const styles = StyleSheet.create({
         marginTop: 'auto',
         paddingBottom: 20,
     },
-    // Primary Button (Second Opinion)
-    primaryButton: {
-        backgroundColor: '#D37F52', 
-        borderRadius: 16,
-        paddingVertical: 18,
-        paddingHorizontal: 32,
+    // Save Question Container
+    saveQuestionContainer: {
+        flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        width: '100%',
-        maxWidth: 280,
-        elevation: 4,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
+        marginBottom: 16,
+        gap: 12,
     },
-    primaryButtonText: {
-        color: '#fff',
+    // Save Question Text
+    saveQuestionText: {
+        color: '#045b26',
         fontSize: 18,
         fontWeight: 'bold',
-        letterSpacing: 0.5,
+        textAlign: 'center',
     },
-    // Secondary Button (Take Another Picture)
-    secondaryButton: {
-        backgroundColor: '#b6e2b6', // Light minty green
-        borderRadius: 16,
-        paddingVertical: 14,
+    // Yes/No Text Buttons
+    yesNoTextButton: {
+        color: '#D37F52',
+        fontSize: 18,
+        fontWeight: 'bold',
+        textDecorationLine: 'underline',
+    },
+    yesNoTextButtonDisabled: {
+        color: '#ccc',
+    },
+
+    // Second Opinion Button
+    secondOpinionButton: {
+        backgroundColor: '#D37F52', // Terracotta orange
+        borderRadius: 12,
+        paddingVertical: 12,
         paddingHorizontal: 24,
         alignItems: 'center',
-        width: '80%',
-        maxWidth: 220,
+        width: '100%',
+        maxWidth: 240,
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.1,
         shadowRadius: 2,
+        marginBottom: 8,
     },
-    secondaryButtonText: {
-        color: '#045b26', // Dark green text
-        fontSize: 14,
-        fontWeight: '600',
+    secondOpinionButtonText: {
+        color: '#fff',
+        fontSize: 16,
+        fontWeight: 'bold',
         letterSpacing: 0.5,
+    },
+    // Note Text
+    noteText: {
+        color: '#666',
+        fontSize: 12,
+        textAlign: 'center',
+        fontStyle: 'italic',
+        marginBottom: 16,
+        paddingHorizontal: 20,
+        lineHeight: 16,
     },
 });
 
@@ -139,6 +155,7 @@ interface IntegrationResultPageProps {
     onSecondOpinion?: () => void;
     onHome?: () => void;
     onSecondOpinionAppointment?: () => void;
+    onSave?: () => void;
     petType?: string;
     severityLevel?: string;
     painLevel?: string;
@@ -148,6 +165,7 @@ export default function IntegrationResultPage({
     onSecondOpinion, 
     onHome, 
     onSecondOpinionAppointment,
+    onSave,
     petType = 'cat', 
     severityLevel = 'Unknown',
     painLevel 
@@ -189,34 +207,84 @@ export default function IntegrationResultPage({
 
     const recommendations = getRecommendations(currentPainLevel, petType);
     const resultImageSource = getResultImage(currentPainLevel);
+    const [isSaved, setIsSaved] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const [saveChoice, setSaveChoice] = useState<'yes' | 'no' | null>(null);
 
-    // Finalize the assessment when component mounts
-    useEffect(() => {
-        const finalizeAssessment = async () => {
+    const handleSaveChoice = async (choice: 'yes' | 'no') => {
+        setSaveChoice(choice);
+        
+        if (choice === 'yes') {
+            setIsSaving(true);
             try {
-                const assessmentId = await AsyncStorage.getItem('currentAssessmentId');
-                if (assessmentId) {
-                    // Update the assessment with final recommendations
-                    const result = await updatePainAssessment(parseInt(assessmentId), {
-                        recommendations: recommendations,
-                        pain_level: currentPainLevel
-                    });
+                // Get the assessment data from local storage
+                const assessmentDataString = await AsyncStorage.getItem('currentAssessmentData');
+                if (assessmentDataString) {
+                    const assessmentData = JSON.parse(assessmentDataString);
+                    
+                    // Update the assessment data with final results
+                    assessmentData.recommendations = recommendations;
+                    assessmentData.pain_level = currentPainLevel;
+                    
+                    // Create the assessment in the database
+                    const result = await createPainAssessment(assessmentData);
 
                     if (result.success) {
-                        console.log('Assessment finalized successfully');
-                        // Clear the assessment ID from storage
-                        await AsyncStorage.removeItem('currentAssessmentId');
+                        console.log('Assessment created and saved successfully');
+                        setIsSaved(true);
+                        // Clear the assessment data from storage
+                        await AsyncStorage.removeItem('currentAssessmentData');
+                        
+                        // Navigate to Pain Assessment page after successful save
+                        if (onSave) {
+                            onSave();
+                        }
                     } else {
-                        console.error('Failed to finalize assessment:', result.message);
+                        console.error('Failed to save assessment:', result.message);
+                        Alert.alert('Error', 'Failed to save assessment. Please try again.');
+                        setSaveChoice(null);
                     }
+                } else {
+                    Alert.alert('Error', 'No assessment data found to save.');
+                    setSaveChoice(null);
                 }
             } catch (error) {
-                console.error('Error finalizing assessment:', error);
+                console.error('Error saving assessment:', error);
+                Alert.alert('Error', 'Failed to save assessment. Please try again.');
+                setSaveChoice(null);
+            } finally {
+                setIsSaving(false);
             }
-        };
+        } else if (choice === 'no') {
+            // Don't save, just clear the data and go home
+            try {
+                await AsyncStorage.removeItem('currentAssessmentData');
+                console.log('Assessment discarded, navigating to home');
+                if (onHome) {
+                    onHome();
+                }
+            } catch (error) {
+                console.error('Error clearing assessment data:', error);
+                if (onHome) {
+                    onHome();
+                }
+            }
+        }
+    };
 
-        finalizeAssessment();
-    }, [currentPainLevel, recommendations]);
+    const handleHome = async () => {
+        try {
+            // Clear the assessment data from storage without saving
+            await AsyncStorage.removeItem('currentAssessmentData');
+            console.log('Assessment discarded, navigating to home');
+        } catch (error) {
+            console.error('Error clearing assessment data:', error);
+        }
+        
+        if (onHome) {
+            onHome();
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -250,19 +318,47 @@ export default function IntegrationResultPage({
 
                 {/* Call-to-Action Buttons */}
                 <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={onSecondOpinionAppointment}
-                    >
-                        <Text style={styles.primaryButtonText}>Second Opinion</Text>
-                    </TouchableOpacity>
+                    <View style={styles.saveQuestionContainer}>
+                        <Text style={styles.saveQuestionText}>Save Assessment?</Text>
+                        
+                        <TouchableOpacity
+                            onPress={() => handleSaveChoice('yes')}
+                            disabled={saveChoice === 'yes' || isSaving}
+                        >
+                            {isSaving ? (
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <ActivityIndicator size="small" color="#D37F52" style={{ marginRight: 4 }} />
+                                    <Text style={[styles.yesNoTextButton, styles.yesNoTextButtonDisabled]}>Saving...</Text>
+                                </View>
+                            ) : (
+                                <Text style={[
+                                    styles.yesNoTextButton,
+                                    (saveChoice === 'yes' || isSaving) && styles.yesNoTextButtonDisabled
+                                ]}>Yes</Text>
+                            )}
+                        </TouchableOpacity>
+                        
+                        <TouchableOpacity
+                            onPress={() => handleSaveChoice('no')}
+                            disabled={saveChoice === 'no' || isSaving}
+                        >
+                            <Text style={[
+                                styles.yesNoTextButton,
+                                saveChoice === 'no' && styles.yesNoTextButtonDisabled
+                            ]}>No</Text>
+                        </TouchableOpacity>
+                    </View>
                     
                     <TouchableOpacity
-                        style={styles.secondaryButton}
-                        onPress={onSecondOpinion}
+                        style={styles.secondOpinionButton}
+                        onPress={onSecondOpinionAppointment}
                     >
-                        <Text style={styles.secondaryButtonText}>Take another picture</Text>
+                        <Text style={styles.secondOpinionButtonText}>Second Opinion</Text>
                     </TouchableOpacity>
+                    
+                    <Text style={styles.noteText}>
+                        Note: You'll need to schedule your pet to clinic appointment once you have a second opinion.
+                    </Text>
                 </View>
             </View>
         </SafeAreaView>

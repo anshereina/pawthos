@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const styles = StyleSheet.create({
@@ -221,23 +221,29 @@ export default function MedicalRecordsPage({ onNavigate }: { onNavigate: (page: 
                 </View>
 
                 {/* Medical Records */}
-                {medicalRecords.length > 0 ? (
-                    medicalRecords.map((record) => (
-                        <TouchableOpacity 
-                            key={record.id} 
-                            style={styles.tableRow}
-                            onPress={() => onNavigate('Pet MedRecords')}
-                        >
-                            <Text style={styles.tableCell}>{record.name}</Text>
-                            <Text style={styles.tableCell}>{record.date}</Text>
-                            <Text style={styles.tableCell}>{record.reason}</Text>
-                        </TouchableOpacity>
-                    ))
-                ) : (
-                    <View style={styles.emptyState}>
-                        <Text style={styles.emptyStateText}>No medical records found</Text>
-                    </View>
-                )}
+                <ScrollView 
+                    style={{ flex: 1 }}
+                    showsVerticalScrollIndicator={true}
+                    contentContainerStyle={{ paddingBottom: 20 }}
+                >
+                    {medicalRecords.length > 0 ? (
+                        medicalRecords.map((record) => (
+                            <TouchableOpacity 
+                                key={record.id} 
+                                style={styles.tableRow}
+                                onPress={() => onNavigate('Pet MedRecords')}
+                            >
+                                <Text style={styles.tableCell}>{record.name}</Text>
+                                <Text style={styles.tableCell}>{record.date}</Text>
+                                <Text style={styles.tableCell}>{record.reason}</Text>
+                            </TouchableOpacity>
+                        ))
+                    ) : (
+                        <View style={styles.emptyState}>
+                            <Text style={styles.emptyStateText}>No medical records found</Text>
+                        </View>
+                    )}
+                </ScrollView>
             </View>
         </SafeAreaView>
     );

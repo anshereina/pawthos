@@ -131,14 +131,14 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     petName: {
-        fontSize: 20,
+        fontSize: 14,
         fontWeight: 'bold',
         color: '#045b26',
         textTransform: 'uppercase',
         marginBottom: 4,
     },
     petId: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#045b26',
         fontWeight: '500',
     },
@@ -215,6 +215,39 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
         onNavigate('Pet Details', { petId: pet.id });
     };
 
+    const handleTabPress = (tabName: string) => {
+        console.log('Tab pressed:', tabName);
+        setActiveFilter(tabName);
+        
+        // Optional: Add analytics or additional logic here
+        switch (tabName) {
+            case 'All':
+                console.log('Showing all pets');
+                break;
+            case 'Cats':
+                console.log('Filtering to show only cats');
+                break;
+            case 'Dogs':
+                console.log('Filtering to show only dogs');
+                break;
+            default:
+                console.log('Unknown tab:', tabName);
+        }
+    };
+
+    const getFilteredPets = () => {
+        switch (activeFilter) {
+            case 'All':
+                return pets;
+            case 'Cats':
+                return pets.filter(pet => pet.species.toLowerCase() === 'cat' || pet.species.toLowerCase() === 'feline');
+            case 'Dogs':
+                return pets.filter(pet => pet.species.toLowerCase() === 'dog' || pet.species.toLowerCase() === 'canine');
+            default:
+                return pets;
+        }
+    };
+
     const formatPetAge = (dateOfBirth: string | undefined) => {
         if (!dateOfBirth) return '';
         
@@ -249,13 +282,7 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
         }
     };
 
-    const filteredPets = activeFilter === 'All' 
-        ? pets 
-        : pets.filter(pet => {
-            if (activeFilter === 'Dogs') return pet.species.toLowerCase() === 'dog';
-            if (activeFilter === 'Cats') return pet.species.toLowerCase() === 'cat';
-            return pet.species.toLowerCase() === activeFilter.toLowerCase();
-        });
+    const filteredPets = getFilteredPets();
 
     return (
         <SafeAreaView style={styles.container}>
@@ -287,7 +314,7 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                             styles.filterBtn, 
                             activeFilter === 'All' ? styles.filterBtnActive : styles.filterBtnInactive
                         ]}
-                        onPress={() => setActiveFilter('All')}
+                        onPress={() => handleTabPress('All')}
                     >
                         <Text style={[
                             styles.filterText, 
@@ -301,7 +328,7 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                             styles.filterBtn, 
                             activeFilter === 'Cats' ? styles.filterBtnActive : styles.filterBtnInactive
                         ]}
-                        onPress={() => setActiveFilter('Cats')}
+                        onPress={() => handleTabPress('Cats')}
                     >
                         <Text style={[
                             styles.filterText, 
@@ -315,7 +342,7 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                             styles.filterBtn, 
                             activeFilter === 'Dogs' ? styles.filterBtnActive : styles.filterBtnInactive
                         ]}
-                        onPress={() => setActiveFilter('Dogs')}
+                        onPress={() => handleTabPress('Dogs')}
                     >
                         <Text style={[
                             styles.filterText, 

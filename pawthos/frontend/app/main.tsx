@@ -266,6 +266,7 @@ export default function MainApp({ navigation }) {
         "IntegrationResult": <IntegrationResultPage 
             onSecondOpinion={() => setSelectedMenu('IntegrationPicture')} 
             onHome={() => setSelectedMenu('Home')} 
+            onSave={() => setSelectedMenu('Pain Assessment')}
             onSecondOpinionAppointment={() => {
                 setAppointmentType('Consultation');
                 setSelectedMenu('Appointment Scheduling');
