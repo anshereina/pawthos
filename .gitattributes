@@ -1,0 +1,2 @@
+backend-python/models/*.pth filter=lfs diff=lfs merge=lfs -text
+backend-python/eld/*.pkl filter=lfs diff=lfs merge=lfs -text

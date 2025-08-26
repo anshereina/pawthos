@@ -1,0 +1,80 @@
+# General
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+*.tmp
+*.swp
+*.swo
+
+# Editors/IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# Environment variables
+.env
+.env.*
+.env.*.local
+*.env
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.python-version
+.venv/
+venv/
+env/
+ENV/
+# Python packaging/build
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Python tooling caches
+.pytest_cache/
+.mypy_cache/
+.coverage*
+.cache/
+.ipynb_checkpoints/
+
+# Project-specific Python
+backend-python/uploads/
+backend-python/run.txt
+
+# Node / JavaScript
+node_modules/
+.npm/
+.pnp/
+.pnp.js
+.pnp.cjs
+.yarn/
+# lockfiles are committed on purpose; do not ignore
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Expo / React Native
+.expo/
+.expo-shared/
+web-build/
+# Metro / Bundler caches
+.expo/.cache/
+.parcel-cache/
+
+# Build outputs (generic)
+build/
+dist/
+coverage/
+
+# OS / OneDrive noise
+~$*
+$RECYCLE.BIN/
+*.lnk
+
+# Misc
+*.bak
+*.orig
