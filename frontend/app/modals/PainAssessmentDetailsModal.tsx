@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView, Image } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { PainAssessmentRecord, formatAssessmentDate, derivePainLevelLabel } from '../../utils/painAssessments.utils';
+import { API_BASE_URL } from '../../utils/config';
 
 interface PainAssessmentDetailsModalProps {
     visible: boolean;
@@ -129,6 +130,13 @@ const getPainLevelColorStyle = (painLevel?: string) => {
 };
 
 export default function PainAssessmentDetailsModal({ visible, onClose, record }: PainAssessmentDetailsModalProps) {
+    const buildImageUrl = (url?: string | null) => {
+        if (!url) return null;
+        if (url.startsWith('file://')) return 'local-file';
+        if (url.startsWith('http')) return url;
+        const base = (API_BASE_URL || '').replace(/\/+$/, '');
+        return `${base}${url}`;
+    };
     return (
         <Modal
             visible={visible}
@@ -151,6 +159,29 @@ export default function PainAssessmentDetailsModal({ visible, onClose, record }:
                     <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
                         {record && (
                             <>
+                                {/* Image Preview (if available) */}
+                                {(() => {
+                                    const imgField = (record as any).image_url as (string | undefined);
+                                    const built = buildImageUrl(imgField || null);
+                                    if (!built) return null;
+                                    if (built === 'local-file') {
+                                        return (
+                                            <View style={{ marginBottom: 16 }}>
+                                                <Text style={{ color: '#666' }}>
+                                                    Mobile App Image{`\n`}This image was uploaded from a mobile device and cannot be displayed in the web interface.
+                                                </Text>
+                                            </View>
+                                        );
+                                    }
+                                    return (
+                                        <Image
+                                            source={{ uri: built }}
+                                            style={{ width: '100%', height: 240, borderRadius: 8, marginBottom: 16 }}
+                                            resizeMode="cover"
+                                        />
+                                    );
+                                })()}
+
                                 {/* Assessment Information */}
                                 <View style={styles.assessmentInfo}>
                                     <View style={styles.infoRow}>

@@ -175,6 +175,83 @@ export const createPainAssessment = async (assessmentData: PainAssessmentCreate)
 };
 
 /**
+ * Create a new pain assessment with image upload (multipart)
+ */
+export const createPainAssessmentWithImage = async (
+    assessmentData: PainAssessmentCreate,
+    imageUri: string
+): Promise<SinglePainAssessmentResponse> => {
+    try {
+        const token = await getAuthToken();
+        if (!token) {
+            return {
+                success: false,
+                message: 'No authentication token found'
+            };
+        }
+
+        // Normalize pain_score
+        const toPainScore = (level?: string): number => {
+            const value = (level || '').toLowerCase();
+            if (value.includes('level 0') || value.includes('no pain')) return 0;
+            if (value.includes('level 1') || value.includes('mild')) return 1;
+            if (value.includes('level 2') || value.includes('moderate') || value.includes('severe')) return 2;
+            return 0;
+        };
+
+        const form = new FormData();
+        form.append('pet_id', String(assessmentData.pet_id));
+        form.append('pain_score', String(typeof assessmentData.pain_score === 'number' ? assessmentData.pain_score : toPainScore(assessmentData.pain_level)));
+        if (assessmentData.pain_level) form.append('pain_level', assessmentData.pain_level);
+        if (assessmentData.notes) form.append('notes', assessmentData.notes);
+        if (assessmentData.pet_name) form.append('pet_name', assessmentData.pet_name);
+        if (assessmentData.pet_type) form.append('pet_type', assessmentData.pet_type);
+        if (assessmentData.basic_answers) form.append('basic_answers', assessmentData.basic_answers);
+        if (assessmentData.assessment_answers) form.append('assessment_answers', assessmentData.assessment_answers);
+
+        // Attach image file
+        form.append('file', {
+            uri: imageUri,
+            name: 'assessment.jpg',
+            type: 'image/jpeg',
+        } as any);
+
+        const response = await fetch(`${API_BASE_URL}/pain-assessments/with-image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                // Do NOT set Content-Type; let fetch set the multipart boundary
+            } as any,
+            body: form,
+        });
+
+        if (!response.ok) {
+            let message = 'Failed to create pain assessment with image';
+            try {
+                const errorData = await response.json();
+                message = errorData?.detail || message;
+            } catch (e) {
+                const text = await response.text();
+                message = text || message;
+            }
+            return { success: false, message };
+        }
+
+        const data = await response.json();
+        return {
+            success: true,
+            data,
+        };
+    } catch (error) {
+        console.error('Create pain assessment with image error:', error);
+        return {
+            success: false,
+            message: 'Network error while creating pain assessment with image'
+        };
+    }
+};
+
+/**
  * Get a specific pain assessment by ID
  */
 export const getPainAssessmentById = async (assessmentId: number): Promise<SinglePainAssessmentResponse> => {

@@ -2,7 +2,7 @@ import warnings
 # Suppress deprecation warnings from torchvision
 warnings.filterwarnings("ignore", category=UserWarning, module="torchvision")
 
-from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File
+from fastapi import FastAPI, HTTPException, Depends, status, UploadFile, File, Form
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -1064,6 +1064,58 @@ def create_pain_assessment(assessment: PainAssessmentCreate, current_user: User 
     print(f"Saved assessment_answers: {db_assessment.assessment_answers}")
     
     return db_assessment
+
+@app.post("/api/pain-assessments/with-image", response_model=PainAssessmentResponse)
+async def create_pain_assessment_with_image(
+    pet_id: int = Form(...),
+    pain_score: int = Form(...),
+    pain_level: Optional[str] = Form(None),
+    notes: Optional[str] = Form(None),
+    pet_name: Optional[str] = Form(None),
+    pet_type: Optional[str] = Form(None),
+    basic_answers: Optional[str] = Form(None),
+    assessment_answers: Optional[str] = Form(None),
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    # Validate file
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    # Generate unique filename and save
+    try:
+        ext = (file.filename.split(".")[-1] or "jpg").lower()
+        ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S%f')
+        filename = f"assessment_{current_user.id}_{ts}.{ext}"
+        disk_path = os.path.join("uploads", filename)
+        with open(disk_path, "wb") as out:
+            out.write(file.file.read())
+        image_url = f"/uploads/{filename}"
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to save image")
+
+    # Create assessment record
+    try:
+        db_assessment = PainAssessment(
+            pet_id=pet_id,
+            user_id=current_user.id,
+            pet_name=pet_name,
+            pet_type=pet_type,
+            pain_score=pain_score,
+            pain_level=pain_level,
+            notes=notes,
+            image_url=image_url,
+            basic_answers=basic_answers,
+            assessment_answers=assessment_answers,
+        )
+        db.add(db_assessment)
+        db.commit()
+        db.refresh(db_assessment)
+        return db_assessment
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to create pain assessment")
 
 @app.get("/api/pain-assessments", response_model=List[PainAssessmentResponse])
 def get_pain_assessments(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

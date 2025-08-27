@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createPainAssessment } from '../../utils/painAssessments.utils';
+import { createPainAssessment, createPainAssessmentWithImage } from '../../utils/painAssessments.utils';
 
 const styles = StyleSheet.create({
     container: {
@@ -304,8 +304,15 @@ export default function IntegrationResultPage({
                     assessmentData.recommendations = recommendations;
                     assessmentData.pain_level = currentPainLevel;
                     
-                    // Create the assessment in the database
-                    const result = await createPainAssessment(assessmentData);
+                    // If image_url is a local file path, upload via multipart endpoint first
+                    let result;
+                    const imageUrlString = String(assessmentData?.image_url || '');
+                    if (imageUrlString.startsWith('file://')) {
+                        result = await createPainAssessmentWithImage(assessmentData, imageUrlString);
+                    } else {
+                        // No local image or already a server URL; create via JSON
+                        result = await createPainAssessment(assessmentData);
+                    }
 
                     if (result.success) {
                         console.log('Assessment created and saved successfully');
