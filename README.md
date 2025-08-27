@@ -48,3 +48,35 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Repository notes
+
+### Git LFS required
+
+This repository stores large model binaries via Git LFS. Before cloning or pulling, ensure Git LFS is installed:
+
+```bash
+git lfs install
+```
+
+If you already cloned without LFS, run:
+
+```bash
+git lfs pull
+```
+
+LFS-tracked paths include:
+
+- `backend-python/models/*.pth`
+- `backend-python/eld/*.pkl`
+
+### History rewrite (LFS migration)
+
+We migrated historical commits to store large binaries in LFS. If you have a previous clone, you may need to resync your local branch:
+
+```bash
+git fetch --all --prune
+git reset --hard origin/main
+```
+
+Alternatively, re-clone the repository to ensure a clean state.
