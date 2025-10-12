@@ -19,6 +19,8 @@ export default function App(): JSX.Element | null {
   const [currentScreen, setCurrentScreen] = useState<ScreenName>('Welcome');
   const [fontsLoaded] = useFonts({
     IrishGrover: require('./assets/fonts/IrishGrover-Regular.ttf'),
+    Jumper: require('./assets/fonts/Jumper-Regular.ttf'),
+    Flink: require('./assets/fonts/Flink-Regular.otf'),
   });
 
   if (!fontsLoaded) {

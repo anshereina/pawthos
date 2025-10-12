@@ -245,9 +245,11 @@ export default function VaccineRecordsPage({ onNavigate }: { onNavigate: (page: 
             const filtered = vaccineRecords.filter(record => {
                 const pet = pets.find(p => p.id === record.pet_id);
                 if (activeFilter === 'Dogs') {
-                    return pet?.species?.toLowerCase() === 'dog';
+                    const species = pet?.species?.toLowerCase();
+                    return species === 'dog' || species === 'canine';
                 } else if (activeFilter === 'Cats') {
-                    return pet?.species?.toLowerCase() === 'cat';
+                    const species = pet?.species?.toLowerCase();
+                    return species === 'cat' || species === 'feline';
                 }
                 return true;
             });
@@ -280,9 +282,6 @@ export default function VaccineRecordsPage({ onNavigate }: { onNavigate: (page: 
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Vaccine Records</Text>
-                </View>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#045b26" />
                     <Text style={{ marginTop: 16, color: '#666' }}>Loading vaccination records...</Text>
@@ -294,9 +293,6 @@ export default function VaccineRecordsPage({ onNavigate }: { onNavigate: (page: 
     if (error) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Vaccine Records</Text>
-                </View>
                 <View style={styles.errorContainer}>
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
@@ -309,10 +305,6 @@ export default function VaccineRecordsPage({ onNavigate }: { onNavigate: (page: 
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header and Title */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Vaccine Records</Text>
-            </View>
 
             <View style={styles.content}>
                 {/* Search Bar */}
@@ -351,7 +343,8 @@ export default function VaccineRecordsPage({ onNavigate }: { onNavigate: (page: 
                         ]}>
                             Cats ({vaccineRecords.filter(r => {
                                 const pet = pets.find(p => p.id === r.pet_id);
-                                return pet?.species?.toLowerCase() === 'cat';
+                                const species = pet?.species?.toLowerCase();
+                                return species === 'cat' || species === 'feline';
                             }).length})
                         </Text>
                     </TouchableOpacity>
@@ -368,7 +361,8 @@ export default function VaccineRecordsPage({ onNavigate }: { onNavigate: (page: 
                         ]}>
                             Dogs ({vaccineRecords.filter(r => {
                                 const pet = pets.find(p => p.id === r.pet_id);
-                                return pet?.species?.toLowerCase() === 'dog';
+                                const species = pet?.species?.toLowerCase();
+                                return species === 'dog' || species === 'canine';
                             }).length})
                         </Text>
                     </TouchableOpacity>

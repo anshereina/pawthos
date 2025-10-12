@@ -1,48 +1,88 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, ScrollView, Modal, TouchableWithoutFeedback, Pressable, Image, Alert, ActivityIndicator } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, SafeAreaView, ScrollView, Modal, TouchableWithoutFeedback, Pressable, Image, Alert, ActivityIndicator, Animated } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { createPet } from '../../utils/pets.utils';
+import { createPet, uploadPetPhoto } from '../../utils/pets.utils';
 import { getCurrentUser } from '../../utils/auth.utils';
 
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#f7f7f7' 
+        backgroundColor: '#ffffff' 
     },
     header: {
         paddingHorizontal: 24,
-        paddingVertical: 16,
+        paddingVertical: 20,
         backgroundColor: '#fff',
-        elevation: 2,
+        alignItems: 'center',
     },
     title: { 
-        fontSize: 28, 
+        fontSize: 24, 
         fontWeight: 'bold', 
         color: '#000',
+        fontFamily: 'Jumper',
         textAlign: 'center',
-        marginBottom: 24,
+    },
+    subtitle: {
+        fontSize: 14,
+        color: 'rgba(26, 26, 26, 0.7)',
+        fontFamily: 'Flink',
+        textAlign: 'center',
+        marginTop: 8,
     },
     content: {
         flex: 1,
-        paddingHorizontal: 24,
+        paddingHorizontal: 16,
+    },
+    
+    // Progress Indicator
+    progressContainer: {
+        marginBottom: 24,
+    },
+    progressTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    progressBar: {
+        height: 6,
+        backgroundColor: '#E8F5E8',
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        backgroundColor: '#045b26',
+        borderRadius: 3,
     },
     formContainer: {
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         borderRadius: 16,
-        padding: 20,
+        padding: 24,
         marginBottom: 24,
-        elevation: 2,
-        overflow: 'visible',
+        borderWidth: 1,
+        borderColor: '#E8E8E8',
     },
     formSection: {
-        marginBottom: 20,
+        marginBottom: 24,
     },
     sectionTitle: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#045b26',
-        marginBottom: 8,
+        fontFamily: 'Jumper',
+        marginBottom: 12,
+    },
+    sectionIcon: {
+        marginRight: 8,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
     },
     questionText: {
         fontSize: 16,
@@ -83,26 +123,56 @@ const styles = StyleSheet.create({
     },
     inputField: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#E0E0E0',
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 14,
         fontSize: 16,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         marginBottom: 8,
+        fontFamily: 'Flink',
+        color: '#000',
+    },
+    inputFieldFocused: {
+        borderColor: '#045b26',
+        backgroundColor: '#F8FFF8',
+    },
+    inputFieldError: {
+        borderColor: '#DC3545',
+        backgroundColor: '#FFF5F5',
     },
     inputFieldDisabled: {
-        backgroundColor: '#f5f5f5',
-        color: '#666',
-        borderColor: '#e0e0e0',
+        backgroundColor: '#F8F9FA',
+        color: '#6C757D',
+        borderColor: '#E9ECEF',
+    },
+    inputLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#333',
+        fontFamily: 'Jumper',
+        marginBottom: 6,
+    },
+    inputHelpText: {
+        fontSize: 12,
+        color: '#6C757D',
+        fontFamily: 'Flink',
+        marginTop: 4,
+        fontStyle: 'italic',
+    },
+    inputErrorText: {
+        fontSize: 12,
+        color: '#DC3545',
+        fontFamily: 'Flink',
+        marginTop: 4,
     },
     dropdownContainer: {
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#E0E0E0',
         borderRadius: 8,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        backgroundColor: '#f9f9f9',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        backgroundColor: '#FFFFFF',
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -110,35 +180,33 @@ const styles = StyleSheet.create({
     },
     dropdownContainerActive: {
         borderColor: '#045b26',
-        backgroundColor: '#fff',
+        backgroundColor: '#F8FFF8',
         borderBottomLeftRadius: 0,
         borderBottomRightRadius: 0,
     },
     dropdownText: {
-        color: '#999',
+        color: '#6C757D',
         fontSize: 16,
+        fontFamily: 'Flink',
     },
     dropdownTextSelected: {
-        color: '#333',
+        color: '#000',
         fontSize: 16,
+        fontFamily: 'Flink',
     },
     dropdownOptions: {
         position: 'absolute',
         top: '100%',
         left: 0,
         right: 0,
-        backgroundColor: '#fff',
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#ddd',
+        borderColor: '#E0E0E0',
         borderTopWidth: 0,
         borderBottomLeftRadius: 8,
         borderBottomRightRadius: 8,
         zIndex: 1000,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
+        maxHeight: 200,
     },
     dropdownOption: {
         paddingHorizontal: 12,
@@ -251,9 +319,56 @@ export default function RegisterPetPage({ onNavigate }: { onNavigate?: (page: st
     const [reproductiveStatus, setReproductiveStatus] = useState<'Intact' | 'Castrated/Spayed' | null>(null);
     const [petPhoto, setPetPhoto] = useState<string | null>(null);
     const [isRegistering, setIsRegistering] = useState(false);
+    
+    // Form validation states
+    const [fieldErrors, setFieldErrors] = useState<{[key: string]: string}>({});
+    const [focusedField, setFocusedField] = useState<string | null>(null);
+    
+    // Entrance animations
+    const enterOpacity = useRef(new Animated.Value(0)).current;
+    const enterTranslateY = useRef(new Animated.Value(8)).current;
+    const progressAnim = useRef(new Animated.Value(0)).current;
 
     const speciesOptions = ['Canine', 'Feline'];
     const genderOptions = ['Male', 'Female'];
+    
+    // Add entrance animations
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(enterOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+            Animated.timing(enterTranslateY, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, []);
+
+    // Calculate form completion progress
+    const calculateProgress = () => {
+        const fields = [
+            petName.trim(),
+            species !== 'Please Select',
+            gender !== 'Please Select',
+            reproductiveStatus,
+        ];
+        const completed = fields.filter(Boolean).length;
+        return (completed / fields.length) * 100;
+    };
+
+    // Update progress animation
+    useEffect(() => {
+        const progress = calculateProgress();
+        Animated.timing(progressAnim, {
+            toValue: progress,
+            duration: 300,
+            useNativeDriver: false,
+        }).start();
+    }, [petName, species, gender, reproductiveStatus]);
 
     // Function to filter out invalid characters (numbers and special characters except spaces, hyphens, apostrophes)
     const filterTextInput = (text: string) => {
@@ -261,17 +376,42 @@ export default function RegisterPetPage({ onNavigate }: { onNavigate?: (page: st
         return text.replace(/[^A-Za-z\s\-]/g, '');
     };
 
-    // Handlers for text input with filtering
+    // Enhanced input handlers with validation
     const handlePetNameChange = (text: string) => {
-        setPetName(filterTextInput(text));
+        const filtered = filterTextInput(text);
+        setPetName(filtered);
+        
+        // Clear error when user starts typing
+        if (fieldErrors.petName) {
+            setFieldErrors(prev => ({ ...prev, petName: '' }));
+        }
     };
 
     const handleBreedChange = (text: string) => {
-        setBreed(filterTextInput(text));
+        const filtered = filterTextInput(text);
+        setBreed(filtered);
+        
+        if (fieldErrors.breed) {
+            setFieldErrors(prev => ({ ...prev, breed: '' }));
+        }
     };
 
     const handleColorChange = (text: string) => {
-        setColor(filterTextInput(text));
+        const filtered = filterTextInput(text);
+        setColor(filtered);
+        
+        if (fieldErrors.color) {
+            setFieldErrors(prev => ({ ...prev, color: '' }));
+        }
+    };
+
+    // Field focus handlers
+    const handleFieldFocus = (fieldName: string) => {
+        setFocusedField(fieldName);
+    };
+
+    const handleFieldBlur = () => {
+        setFocusedField(null);
     };
 
     const handleSpeciesSelect = (selectedSpecies: string) => {
@@ -526,22 +666,38 @@ export default function RegisterPetPage({ onNavigate }: { onNavigate?: (page: st
                 pet_id: finalPetId,
                 name: petName.trim(),
                 owner_name: ownerName,
-                species: species.toLowerCase() === 'canine' ? 'Dog' : 'Cat',
+                species: species,
                 date_of_birth: formattedDateOfBirth,
                 color: color.trim() || undefined,
                 breed: breed.trim() || undefined,
                 gender: gender.toLowerCase(),
                 reproductive_status: reproductiveStatus?.toLowerCase(),
-                photo_url: petPhoto || undefined,
             };
 
             console.log('Registering pet with data:', petData);
 
+            // Create pet first
             const result = await createPet(petData);
 
             if (result.success) {
+                const createdPet = result.data as any;
+                const petId = createdPet.id;
+                
+                // If there's a photo, upload it after pet creation
+                if (petPhoto) {
+                    console.log('Uploading pet photo for pet ID:', petId, 'Photo URI:', petPhoto);
+                    const photoResult = await uploadPetPhoto(petId, petPhoto);
+                    
+                    if (photoResult.success) {
+                        console.log('Photo uploaded successfully:', photoResult.photo_url);
+                    } else {
+                        console.warn('Photo upload failed:', photoResult.message);
+                        // Don't fail the entire registration if photo upload fails
+                    }
+                }
+
                 // Use returned pet ID if available
-                const returnedId = (Array.isArray(result.data) ? undefined : (result.data as any)?.pet_id) || finalPetId;
+                const returnedId = createdPet?.pet_id || finalPetId;
                 Alert.alert(
                     'Success!',
                     `${petName} has been registered successfully with ID: ${returnedId}`,
@@ -582,28 +738,67 @@ export default function RegisterPetPage({ onNavigate }: { onNavigate?: (page: st
     return (
         <SafeAreaView style={styles.container}>
             <TouchableWithoutFeedback onPress={() => { setShowSpeciesDropdown(false); setShowGenderDropdown(false); }}>
-                <ScrollView style={styles.content}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Register your Pet</Text>
-                </View>
+                <Animated.View style={{ flex: 1, opacity: enterOpacity, transform: [{ translateY: enterTranslateY }] }}>
+                    <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                        <View style={styles.header}>
+                            <Text style={styles.title}>Register Your Pet</Text>
+                            <Text style={styles.subtitle}>Complete the form to add your pet to your profile</Text>
+                        </View>
 
-                <View style={styles.formContainer}>
-                    {/* Pet's Name */}
-                    <View style={styles.formSection}>
-                        <Text style={styles.sectionTitle}>Pet's Name</Text>
-                        <TextInput
-                            style={styles.inputField}
-                            placeholder="Enter pet's name"
-                            placeholderTextColor="#999"
-                            value={petName}
-                            onChangeText={handlePetNameChange}
-                        />
-                    </View>
+                        {/* Progress Indicator */}
+                        <View style={styles.progressContainer}>
+                            <Text style={styles.progressTitle}>
+                                Registration Progress ({Math.round(calculateProgress())}% complete)
+                            </Text>
+                            <View style={styles.progressBar}>
+                                <Animated.View 
+                                    style={[
+                                        styles.progressFill, 
+                                        { 
+                                            width: progressAnim.interpolate({
+                                                inputRange: [0, 100],
+                                                outputRange: ['0%', '100%']
+                                            })
+                                        }
+                                    ]} 
+                                />
+                            </View>
+                        </View>
 
-                    {/* Type of Species */}
-                    <View style={styles.formSection}>
-                        <Text style={styles.sectionTitle}>Type of Species</Text>
-                        <View style={{ position: 'relative' }}>
+                        <View style={styles.formContainer}>
+                            {/* Pet's Name */}
+                            <View style={styles.formSection}>
+                                <View style={styles.sectionHeader}>
+                                    <MaterialCommunityIcons name="dog" size={20} color="#045b26" style={styles.sectionIcon} />
+                                    <Text style={styles.sectionTitle}>Pet's Name</Text>
+                                </View>
+                                <TextInput
+                                    style={[
+                                        styles.inputField,
+                                        focusedField === 'petName' && styles.inputFieldFocused,
+                                        fieldErrors.petName && styles.inputFieldError
+                                    ]}
+                                    placeholder="Enter your pet's name"
+                                    placeholderTextColor="#6C757D"
+                                    value={petName}
+                                    onChangeText={handlePetNameChange}
+                                    onFocus={() => handleFieldFocus('petName')}
+                                    onBlur={handleFieldBlur}
+                                    maxLength={50}
+                                />
+                                <Text style={styles.inputHelpText}>Required • Letters, spaces, and hyphens only</Text>
+                                {fieldErrors.petName && (
+                                    <Text style={styles.inputErrorText}>{fieldErrors.petName}</Text>
+                                )}
+                            </View>
+
+                            {/* Type of Species */}
+                            <View style={styles.formSection}>
+                                <View style={styles.sectionHeader}>
+                                    <MaterialCommunityIcons name="paw" size={20} color="#045b26" style={styles.sectionIcon} />
+                                    <Text style={styles.sectionTitle}>Type of Species</Text>
+                                </View>
+                                <View style={{ position: 'relative' }}>
                             <TouchableOpacity 
                                 style={[
                                     styles.dropdownContainer,
@@ -808,7 +1003,8 @@ export default function RegisterPetPage({ onNavigate }: { onNavigate?: (page: st
                         <Text style={styles.registerButtonText}>Register</Text>
                     )}
                 </TouchableOpacity>
-                </ScrollView>
+                    </ScrollView>
+                </Animated.View>
             </TouchableWithoutFeedback>
         </SafeAreaView>
     );

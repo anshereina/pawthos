@@ -1,74 +1,82 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { vaccinationRecordsAPI, VaccinationRecord } from '../../utils/vaccinationRecords.utils';
 import { getPets, PetData } from '../../utils/pets.utils';
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#f7f7f7' 
+        backgroundColor: '#FFFFFF' 
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        backgroundColor: '#fff',
-        elevation: 2,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    backButton: {
-        marginRight: 16,
-    },
-    title: { 
-        fontSize: 28, 
-        fontWeight: 'bold', 
-        color: '#000' 
-    },
+    // Export button for section header
     exportButton: {
         backgroundColor: '#045b26',
         paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 6,
+        paddingVertical: 5,
+        borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
     },
     exportButtonText: {
-        color: '#fff',
-        fontSize: 10,
+        color: '#FFFFFF',
+        fontSize: 12,
         fontWeight: 'bold',
-        marginLeft: 4,
+        fontFamily: 'Jumper',
+        marginLeft: 6,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 16,
+        paddingTop: 20,
     },
+    // Modern Pet Info Card
     petInfoSection: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    petInfoGradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        backgroundColor: '#045b26',
+    },
+    petInfoHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 20,
-        elevation: 2,
+    },
+    petInfoIconContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
     },
     petInfoTitle: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#045b26',
-        marginBottom: 16,
+        fontFamily: 'Jumper',
     },
     petInfoRow: {
         flexDirection: 'row',
-        marginBottom: 12,
+        marginBottom: 10,
     },
     petInfoColumn: {
         flex: 1,
@@ -79,28 +87,57 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     petInfoLabel: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '600',
-        color: '#045b26',
+        color: '#666',
+        fontFamily: 'Flink',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
         width: 80,
     },
     petInfoValue: {
-        fontSize: 14,
-        color: '#666',
-        flex: 1,
-    },
-    tableContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        overflow: 'hidden',
-        elevation: 2,
-    },
-    tableTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
         color: '#045b26',
-        padding: 20,
-        paddingBottom: 16,
+        fontFamily: 'System',
+        flex: 1,
+    },
+    // Modern Vaccination Records Section
+    vaccinationSection: {
+        flex: 1,
+    },
+    vaccinationSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    vaccinationSectionLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    vaccinationSectionIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    vaccinationSectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+    },
+    tableContainer: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
     },
     tableHeader: {
         flexDirection: 'row',
@@ -156,42 +193,96 @@ const styles = StyleSheet.create({
     lastEmptyCell: {
         borderRightWidth: 0,
     },
+    // Loading and Error States
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+        fontFamily: 'Flink',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 24,
+        backgroundColor: '#FFFFFF',
+    },
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FFE8E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#DC3545',
+        fontFamily: 'Jumper',
+        marginBottom: 8,
+        textAlign: 'center',
     },
     errorText: {
-        fontSize: 16,
-        color: '#ff4444',
+        fontSize: 14,
+        color: '#666',
+        fontFamily: 'Flink',
         textAlign: 'center',
-        marginBottom: 16,
+        marginBottom: 24,
+        lineHeight: 20,
     },
     retryButton: {
         backgroundColor: '#045b26',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 8,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 16,
     },
     retryButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 14,
         fontWeight: 'bold',
+        fontFamily: 'Jumper',
     },
-    emptyState: {
-        padding: 20,
+    // Empty State
+    emptyStateCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 40,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+        margin: 20,
+    },
+    emptyStateIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#F8FFF8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    emptyStateTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+        marginBottom: 8,
+        textAlign: 'center',
     },
     emptyStateText: {
         fontSize: 14,
         color: '#666',
+        fontFamily: 'Flink',
         textAlign: 'center',
+        lineHeight: 20,
     },
 });
 
@@ -329,7 +420,7 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
             const { uri } = await Print.printToFileAsync({ html });
 
             const fileName = `Vaccination_Card_${petName.replace(/[^a-z0-9_-]/gi, '_')}_${Date.now()}.pdf`;
-            const dest = `${FileSystem.documentDirectory}${fileName}`;
+            const dest = `${(FileSystem as any).documentDirectory || ''}${fileName}`;
             await FileSystem.moveAsync({ from: uri, to: dest });
 
             if (await Sharing.isAvailableAsync()) {
@@ -378,91 +469,54 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <View style={styles.headerLeft}>
-                        <TouchableOpacity 
-                            style={styles.backButton}
-                            onPress={handleBackButton}
-                        >
-                            <MaterialIcons name="arrow-back" size={24} color="#666" />
-                        </TouchableOpacity>
-                        <Text style={styles.title}>Pet VacCard</Text>
-                    </View>
-                    <TouchableOpacity style={styles.exportButton} onPress={() => Alert.alert('Export', 'Exporting vaccination card...')}>
-                        <MaterialIcons name="file-download" size={18} color="#fff" />
-                        <Text style={styles.exportButtonText}>Export file</Text>
-                    </TouchableOpacity>
-                </View>
+            <View style={styles.container}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#045b26" />
-                    <Text style={{ marginTop: 16, color: '#666' }}>Loading vaccination card...</Text>
+                    <Text style={styles.loadingText}>Loading vaccination card...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <View style={styles.headerLeft}>
-                        <TouchableOpacity 
-                            style={styles.backButton}
-                            onPress={handleBackButton}
-                        >
-                            <MaterialIcons name="arrow-back" size={24} color="#666" />
-                        </TouchableOpacity>
-                        <Text style={styles.title}>Pet VacCard</Text>
-                    </View>
-                    <TouchableOpacity style={styles.exportButton} onPress={() => Alert.alert('Export', 'Exporting vaccination card...')}>
-                        <MaterialIcons name="file-download" size={18} color="#fff" />
-                        <Text style={styles.exportButtonText}>Export file</Text>
-                    </TouchableOpacity>
-                </View>
+            <View style={styles.container}>
                 <View style={styles.errorContainer}>
+                    <View style={styles.errorIconContainer}>
+                        <MaterialIcons name="error-outline" size={40} color="#DC3545" />
+                    </View>
+                    <Text style={styles.errorTitle}>Something went wrong</Text>
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-                        <Text style={styles.retryButtonText}>Retry</Text>
+                        <Text style={styles.retryButtonText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity 
-                        style={styles.backButton}
-                        onPress={handleBackButton}
-                    >
-                        <MaterialIcons name="arrow-back" size={24} color="#666" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Pet VacCard</Text>
-                </View>
-                <TouchableOpacity style={styles.exportButton} onPress={handleExportPdf}>
-                    <MaterialIcons name="file-download" size={14} color="#fff" />
-                    <Text style={styles.exportButtonText}>Export file</Text>
-                </TouchableOpacity>
-            </View>
-
+        <View style={styles.container}>
             <ScrollView style={styles.content}>
-                {/* Pet Information Section */}
+                {/* Modern Pet Information Section */}
                 {petInfo && (
                 <View style={styles.petInfoSection}>
-                    <Text style={styles.petInfoTitle}>Pet Information</Text>
+                    <View style={styles.petInfoGradient} />
+                    <View style={styles.petInfoHeader}>
+                        <View style={styles.petInfoIconContainer}>
+                            <MaterialCommunityIcons name="paw" size={24} color="#045b26" />
+                        </View>
+                        <Text style={styles.petInfoTitle}>Pet Information</Text>
+                    </View>
                     
                     <View style={styles.petInfoRow}>
                         <View style={styles.petInfoColumn}>
                             <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Name:</Text>
+                                <Text style={styles.petInfoLabel}>Name</Text>
                                     <Text style={styles.petInfoValue}>{petInfo.name}</Text>
                             </View>
                             <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Age:</Text>
+                                <Text style={styles.petInfoLabel}>Age</Text>
                                     <Text style={styles.petInfoValue}>
                                         {petInfo.date_of_birth ? calculateAge(petInfo.date_of_birth) : 'Unknown'}
                                     </Text>
@@ -470,13 +524,13 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
                         </View>
                         <View style={styles.petInfoColumn}>
                             <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Date of Birth:</Text>
+                                <Text style={styles.petInfoLabel}>Birth Date</Text>
                                     <Text style={styles.petInfoValue}>
                                         {petInfo.date_of_birth ? formatDate(petInfo.date_of_birth) : 'Unknown'}
                                     </Text>
                             </View>
                             <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Gender:</Text>
+                                <Text style={styles.petInfoLabel}>Gender</Text>
                                     <Text style={styles.petInfoValue}>{petInfo.gender || 'Unknown'}</Text>
                             </View>
                         </View>
@@ -484,45 +538,64 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
                 </View>
                 )}
 
-                {/* Vaccination Record Table */}
-                <View style={styles.tableContainer}>                    
-                    {/* Table Header */}
-                    <View style={styles.tableHeader}>
-                        <Text style={styles.headerCell}>Date of Vaccination</Text>
-                        <Text style={styles.headerCell}>Vaccine Used</Text>
-                        <Text style={styles.headerCell}>Lot No./ Batch No.</Text>
-                        <Text style={styles.headerCell}>Date of next Vaccination</Text>
-                        <Text style={styles.headerCell}>Vet. Lic No. PTR</Text>
+                {/* Modern Vaccination Records Section */}
+                <View style={styles.vaccinationSection}>
+                    <View style={styles.vaccinationSectionHeader}>
+                        <View style={styles.vaccinationSectionLeft}>
+                            <View style={styles.vaccinationSectionIconContainer}>
+                                <MaterialCommunityIcons name="shield-check" size={20} color="#045b26" />
+                            </View>
+                            <Text style={styles.vaccinationSectionTitle}>Vaccination Records</Text>
+                        </View>
+                        <TouchableOpacity style={styles.exportButton} onPress={handleExportPdf}>
+                            <MaterialIcons name="file-download" size={14} color="#FFFFFF" />
+                            <Text style={styles.exportButtonText}>Export</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Vaccination Records */}
-                    {vaccinationRecords.length > 0 ? (
-                        vaccinationRecords.map((record, index) => (
-                            <View key={record.id} style={styles.tableRow}>
-                                <Text style={styles.tableCell}>
-                                    {formatDate(record.vaccination_date)}
-                                </Text>
-                                <Text style={styles.tableCell}>
-                                    {record.vaccine_name}
-                                </Text>
-                                <Text style={styles.tableCell}>
-                                    {record.batch_lot_no || 'N/A'}
-                                </Text>
-                                <Text style={styles.tableCell}>
-                                    {record.expiration_date ? formatDate(record.expiration_date) : 'N/A'}
-                                </Text>
-                                <Text style={[styles.tableCell, styles.lastCell]}>
-                                    {record.veterinarian || 'N/A'}
-                                </Text>
+                    <View style={styles.tableContainer}>                    
+                        {/* Table Header */}
+                        <View style={styles.tableHeader}>
+                            <Text style={styles.headerCell}>Date of Vaccination</Text>
+                            <Text style={styles.headerCell}>Vaccine Used</Text>
+                            <Text style={styles.headerCell}>Lot No./ Batch No.</Text>
+                            <Text style={styles.headerCell}>Date of next Vaccination</Text>
+                            <Text style={styles.headerCell}>Vet. Lic No. PTR</Text>
+                        </View>
+
+                        {/* Vaccination Records */}
+                        {vaccinationRecords.length > 0 ? (
+                            vaccinationRecords.map((record, index) => (
+                                <View key={record.id} style={styles.tableRow}>
+                                    <Text style={styles.tableCell}>
+                                        {formatDate(record.vaccination_date)}
+                                    </Text>
+                                    <Text style={styles.tableCell}>
+                                        {record.vaccine_name}
+                                    </Text>
+                                    <Text style={styles.tableCell}>
+                                        {record.batch_lot_no || 'N/A'}
+                                    </Text>
+                                    <Text style={styles.tableCell}>
+                                        {record.expiration_date ? formatDate(record.expiration_date) : 'N/A'}
+                                    </Text>
+                                    <Text style={[styles.tableCell, styles.lastCell]}>
+                                        {record.veterinarian || 'N/A'}
+                                    </Text>
+                        </View>
+                            ))
+                        ) : (
+                            <View style={styles.emptyStateCard}>
+                                <View style={styles.emptyStateIconContainer}>
+                                    <MaterialCommunityIcons name="shield-check" size={40} color="#045b26" />
+                                </View>
+                                <Text style={styles.emptyStateTitle}>No Records Found</Text>
+                                <Text style={styles.emptyStateText}>No vaccination records found for this pet. Records will appear here once vaccinations are logged.</Text>
+                        </View>
+                        )}
                     </View>
-                        ))
-                    ) : (
-                        <View style={styles.emptyState}>
-                            <Text style={styles.emptyStateText}>No vaccination records found</Text>
-                    </View>
-                    )}
                 </View>
             </ScrollView>
-        </SafeAreaView>
+        </View>
     );
 } 

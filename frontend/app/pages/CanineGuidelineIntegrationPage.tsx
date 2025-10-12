@@ -1,32 +1,26 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function CanineGuidelineIntegrationPage({ onSelect }: { onSelect: (label: string) => void }) {
-  const handleBack = () => {
-    onSelect('CanineIntegration');
-  };
-
   const handleStartAssessment = () => {
     onSelect('CanineIntegrationQuestion');
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header with Back Button */}
-        <View style={styles.headerContainer}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={handleBack}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#045b26" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Assessment Guidelines</Text>
+        {/* Intro */}
+        <View style={styles.introCard}>
+          <MaterialIcons name="pets" size={22} color="#045b26" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.introTitle}>Before you begin</Text>
+            <Text style={styles.introText}>Follow these quick tips to get an accurate and consistent BEAAP assessment for your dog.</Text>
+          </View>
         </View>
 
         {/* Do's Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.card]}>
           <Text style={styles.sectionTitle}>Do's for an Accurate Assessment</Text>
           
           <View style={styles.listItem}>
@@ -63,7 +57,7 @@ export default function CanineGuidelineIntegrationPage({ onSelect }: { onSelect:
         </View>
 
         {/* Don'ts Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.card]}>
           <Text style={styles.sectionTitle}>Don'ts to Avoid Inaccuracy</Text>
           
           <View style={styles.listItem}>
@@ -101,59 +95,77 @@ export default function CanineGuidelineIntegrationPage({ onSelect }: { onSelect:
 
         {/* Action Buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity style={styles.startButton} onPress={handleStartAssessment}>
+          <TouchableOpacity style={styles.startButton} onPress={handleStartAssessment} activeOpacity={0.9}>
             <Text style={styles.startButtonText}>Start Assessment</Text>
             <MaterialIcons name="arrow-forward" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  backButton: {
-    padding: 10,
-    zIndex: 10,
-  },
-  headerTitle: {
-    color: '#D37F52',
-    fontSize: 25,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    backgroundColor: '#F7F9FA',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
+    backgroundColor: 'transparent',
+  },
+  introCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  introTitle: {
+    color: '#045b26',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  introText: {
+    color: '#4a7c59',
+    fontSize: 13,
+    lineHeight: 18,
   },
   section: {
     marginBottom: 32,
   },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
   sectionTitle: {
     color: '#045b26',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 14,
     textAlign: 'left',
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     marginBottom: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 4,
   },
   listIcon: {
     marginRight: 12,
@@ -174,17 +186,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
-    marginTop: -20,
+    marginTop: -8,
   },
   startButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#D37F52',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 24,
     elevation: 4,
-    minWidth: 180,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   startButtonText: {
     color: '#fff',

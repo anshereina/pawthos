@@ -32,15 +32,11 @@ try:
     TORCH_AVAILABLE = True
 except Exception:
     TORCH_AVAILABLE = False
-# import torch
-# import torch.nn as nn
-# from torchvision import models, transforms
 from fastapi_mail import FastMail, MessageSchema, ConnectionConfig, MessageType
 import logging
 logging.basicConfig(level=logging.INFO)
 
 # SMS support removed - using email OTP only
-TWILIO_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
@@ -73,9 +69,6 @@ conf = ConnectionConfig(
     VALIDATE_CERTS=True
 )
 
-# SMS configuration removed - using email OTP only
-twilio_client = None
-TWILIO_PHONE_NUMBER = None
 
 # FastAPI app
 app = FastAPI(title="Pawthos API", description="Pet management system API", version="1.0.0")
@@ -95,24 +88,25 @@ os.makedirs("uploads", exist_ok=True)
 # Mount static files for serving uploaded images
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Lightweight AI prediction setup (OpenCV Haar cascade only)
+# AI prediction setup with OpenCV Haar cascades
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Prefer models/ location, fallback to legacy
 _HAAR_CASCADE_CANDIDATES = [
     os.path.join(_BASE_DIR, "models", "haarcascade_frontalcatface_extended.xml"),
     os.path.join(_BASE_DIR, "haarcascade_frontalcatface_extended.xml"),
 ]
 _HAAR_CASCADE_PATH = next((p for p in _HAAR_CASCADE_CANDIDATES if os.path.exists(p)), None)
+
+# Initialize cascades
 try:
     _CAT_FACE_CASCADE = cv2.CascadeClassifier(_HAAR_CASCADE_PATH) if _HAAR_CASCADE_PATH else None
-except Exception as _e:
+except Exception:
     _CAT_FACE_CASCADE = None
-# Add human face cascade for rejection of non-cat images
+
 try:
     _HUMAN_FACE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
 except Exception:
     _HUMAN_FACE_CASCADE = None
-# Add eye cascades for eye-position verification
+
 try:
     _EYE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye.xml')
     _EYEGLASS_EYE_CASCADE = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_eye_tree_eyeglasses.xml')
@@ -120,9 +114,8 @@ except Exception:
     _EYE_CASCADE = None
     _EYEGLASS_EYE_CASCADE = None
 
-# Strict mode enabled to use tighter species gates
+# ELD configuration
 _ELD_STRICT = True
-_MIN_CONFIDENCE = 0.0
 
 # Import ELD model
 try:
@@ -254,9 +247,6 @@ class VaccinationEvent(Base):
     barangay = Column(String, nullable=False)
     event_date = Column(DateTime, nullable=False)
     status = Column(String, nullable=False, default="Scheduled")  # Scheduled, Completed, Cancelled
-    # description = Column(Text, nullable=True)  # Removed - doesn't exist in your table
-    # created_at = Column(DateTime, default=datetime.utcnow)  # Removed - doesn't exist in your table
-    # updated_at = Column(DateTime, nullable=True)  # Removed - doesn't exist in your table
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -282,24 +272,10 @@ def _ensure_pain_assessments_columns() -> None:
                 # Column might not exist or already be nullable
                 pass
     except Exception as e:
-        print(f"Schema check failed (pain_assessments): {e}")
+        logging.error(f"Schema check failed (pain_assessments): {e}")
 
 _ensure_pain_assessments_columns()
 
-# Debug: Check if columns exist (commented out to reduce startup noise)
-# def _debug_check_columns():
-#     try:
-#         with engine.begin() as connection:
-#             result = connection.execute(text("SELECT column_name FROM information_schema.columns WHERE table_name = 'pain_assessments'"))
-#             columns = [row[0] for row in result]
-#             print("=== DATABASE COLUMNS DEBUG ===")
-#             print(f"Available columns in pain_assessments: {columns}")
-#             print(f"Has basic_answers: {'basic_answers' in columns}")
-#             print(f"Has assessment_answers: {'assessment_answers' in columns}")
-#     except Exception as e:
-#         print(f"Column check failed: {e}")
-
-# _debug_check_columns()
 
 def _ensure_medical_records_columns() -> None:
     try:
@@ -316,7 +292,7 @@ def _ensure_medical_records_columns() -> None:
             connection.execute(text("ALTER TABLE medical_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL"))
     except Exception as e:
         # Log and continue; avoid crashing app on startup
-        print(f"Schema check failed (medical_records): {e}")
+        logging.error(f"Schema check failed (medical_records): {e}")
 
 _ensure_medical_records_columns()
 
@@ -331,7 +307,7 @@ def _ensure_vaccination_records_columns() -> None:
             connection.execute(text("ALTER TABLE vaccination_records ADD COLUMN IF NOT EXISTS created_at TIMESTAMP NULL"))
             connection.execute(text("ALTER TABLE vaccination_records ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP NULL"))
     except Exception as e:
-        print(f"Schema check failed (vaccination_records): {e}")
+        logging.error(f"Schema check failed (vaccination_records): {e}")
 
 _ensure_vaccination_records_columns()
 
@@ -340,11 +316,10 @@ def _ensure_user_photo_url_column() -> None:
         with engine.begin() as connection:
             connection.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS photo_url VARCHAR NULL"))
     except Exception as e:
-        print(f"Schema check failed (users photo_url): {e}")
+        logging.error(f"Schema check failed (users photo_url): {e}")
 
 _ensure_user_photo_url_column()
 
-# Removed _ensure_vaccination_events_table() function since you already have the table
 
 # Pydantic models for request/response
 class UserCreate(BaseModel):
@@ -549,9 +524,6 @@ class VaccinationEventResponse(BaseModel):
     barangay: str
     event_date: datetime
     status: str
-    # description: Optional[str]  # Removed - doesn't exist in your table
-    # created_at: Optional[datetime]  # Removed - doesn't exist in your table
-    # updated_at: Optional[datetime]  # Removed - doesn't exist in your table
 
     class Config:
         from_attributes = True
@@ -627,13 +599,9 @@ async def send_otp_email(email: str, otp: str):
         await fm.send_message(message)
         return True
     except Exception as e:
-        print(f"Error sending email: {e}")
+        logging.error(f"Error sending email: {e}")
         return False
 
-# SMS function removed - using email OTP only
-def send_otp_sms(phone_number: str, otp: str):
-    print("SMS OTP not available - using email OTP only")
-    return False
 
 # API Endpoints
 
@@ -719,7 +687,6 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     if user.email:
         await send_otp_email(user.email, otp)
     
-    # SMS OTP removed - using email OTP only
     
     return db_user
 
@@ -745,11 +712,6 @@ def verify_otp(payload: VerifyOTPRequest, db: Session = Depends(get_db)):
             expires_utc = expires_raw.replace(tzinfo=timezone.utc)
         else:
             expires_utc = expires_raw.astimezone(timezone.utc)
-        # Debug log for diagnosis if still failing
-        try:
-            print(f"OTP verify debug: expires={expires_utc.isoformat()} now={now_utc.isoformat()}")
-        except Exception:
-            pass
         if expires_utc < now_utc:
             raise HTTPException(status_code=400, detail="OTP expired")
     
@@ -902,7 +864,7 @@ def get_dashboard(current_user: User = Depends(get_current_user), db: Session = 
             recent_pets=recent_pets_response,
         )
     except Exception as e:
-        print(f"Dashboard error: {e}")
+        logging.error(f"Dashboard error: {e}")
         raise HTTPException(status_code=500, detail="Server error retrieving dashboard data")
 
 @app.post("/api/pets", response_model=PetResponse)
@@ -1034,11 +996,6 @@ def delete_appointment(appointment_id: int, current_user: User = Depends(get_cur
 
 @app.post("/api/pain-assessments", response_model=PainAssessmentResponse)
 def create_pain_assessment(assessment: PainAssessmentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Debug: Log what's being received
-    print("=== BACKEND RECEIVED ASSESSMENT ===")
-    print(f"Assessment data: {assessment}")
-    print(f"Basic answers: {assessment.basic_answers}")
-    print(f"Assessment answers: {assessment.assessment_answers}")
     
     db_assessment = PainAssessment(
         pet_id=assessment.pet_id,
@@ -1057,11 +1014,6 @@ def create_pain_assessment(assessment: PainAssessmentCreate, current_user: User 
     db.commit()
     db.refresh(db_assessment)
     
-    # Debug: Log what was actually saved to database
-    print("=== DATABASE SAVE DEBUG ===")
-    print(f"Saved assessment ID: {db_assessment.id}")
-    print(f"Saved basic_answers: {db_assessment.basic_answers}")
-    print(f"Saved assessment_answers: {db_assessment.assessment_answers}")
     
     return db_assessment
 
@@ -1286,13 +1238,9 @@ class CatPainModelService:
     def __init__(self):
         if not TORCH_AVAILABLE:
             raise RuntimeError("Torch is not available")
+        # Use global cascade path and find model
+        cascade_path = _HAAR_CASCADE_PATH
         base_dir = os.path.dirname(os.path.abspath(__file__))
-        # Update paths to models/ with fallback
-        cascade_candidates = [
-            os.path.join(base_dir, "models", "haarcascade_frontalcatface_extended.xml"),
-            os.path.join(base_dir, "haarcascade_frontalcatface_extended.xml"),
-        ]
-        cascade_path = next((p for p in cascade_candidates if os.path.exists(p)), None)
         model_candidates = [
             os.path.join(base_dir, "models", "best_efficientnet_model.pth"),
             os.path.join(base_dir, "best_efficientnet_model.pth"),
@@ -1361,7 +1309,7 @@ class CatPainModelService:
             model.load_state_dict(state_dict, strict=False)
             return model, class_names
         except Exception as e:
-            print(f"Torchvision EfficientNet load failed: {e}")
+            logging.error(f"Torchvision EfficientNet load failed: {e}")
 
         # Fallback to efficientnet_pytorch
         try:
@@ -1370,7 +1318,7 @@ class CatPainModelService:
             model.load_state_dict(state_dict, strict=False)
             return model, class_names
         except Exception as e:
-            print(f"efficientnet_pytorch load failed: {e}")
+            logging.error(f"efficientnet_pytorch load failed: {e}")
             raise RuntimeError("Failed to load EfficientNet model with given weights")
 
     def detect_and_crop_face(self, pil_image: Image.Image) -> Image.Image:
@@ -1431,7 +1379,7 @@ def predict(file: UploadFile = File(...)):
                 # any moderate/severe or higher -> level 2
                 return {"pain_level": "Level 2 (Moderate/Severe Pain)"}
             except Exception as model_error:
-                print(f"Model inference unavailable, falling back to heuristic: {model_error}")
+                logging.warning(f"Model inference unavailable, falling back to heuristic: {model_error}")
 
         # Fallback: Haar heuristic
         if _CAT_FACE_CASCADE is None or _CAT_FACE_CASCADE.empty():
@@ -1459,7 +1407,7 @@ def predict(file: UploadFile = File(...)):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Predict error: {e}")
+        logging.error(f"Predict error: {e}")
         raise HTTPException(status_code=500, detail="Failed to process image")
 
 # Enhanced prediction endpoint with ELD
@@ -1555,8 +1503,6 @@ async def predict_with_eld(file: UploadFile = File(...), current_user: User = De
                 edge_energy = float(np.mean(np.abs(sobelx)))
                 # Tighten whisker threshold to block non-cats
                 whisker_thresh = 20.0 if not _ELD_STRICT else 35.0
-                if os.getenv('ELD_DEBUG', '0') == '1':
-                    logging.error(f"ELD_DEBUG whisker_energy={edge_energy:.2f} thresh={whisker_thresh:.2f}")
                 if edge_energy < whisker_thresh:
                     raise HTTPException(status_code=400, detail="No Cat Face Detected\n\nPlease upload a clear photo of a cat's face for pain assessment.")
             except HTTPException:
@@ -1591,8 +1537,6 @@ async def predict_with_eld(file: UploadFile = File(...), current_user: User = De
                     ear_energy = left_ear_energy + right_ear_energy
                     # Tighten ear threshold to block non-cats
                     ear_thresh = 20.0 if not _ELD_STRICT else 35.0
-                    if os.getenv('ELD_DEBUG', '0') == '1':
-                        logging.error(f"ELD_DEBUG ear_energy={ear_energy:.2f} thresh={ear_thresh:.2f}")
                     if ear_energy < ear_thresh:
                         raise HTTPException(status_code=400, detail="No cat face detected in the image")
                 else:
@@ -1608,8 +1552,6 @@ async def predict_with_eld(file: UploadFile = File(...), current_user: User = De
                 # Tighten aspect ratio bounds to block non-cats
                 min_ar = 0.80 if not _ELD_STRICT else 0.85
                 max_ar = 1.25 if not _ELD_STRICT else 1.20
-                if os.getenv('ELD_DEBUG', '0') == '1':
-                    logging.error(f"ELD_DEBUG face_area_ratio={face_area_ratio:.4f} aspect_ratio={aspect_ratio:.3f}")
                 if aspect_ratio < min_ar or aspect_ratio > max_ar:
                     raise HTTPException(status_code=400, detail="No Cat Face Detected\n\nPlease upload a clear photo of a cat's face for pain assessment.")
             except HTTPException:
@@ -1736,14 +1678,6 @@ async def predict_with_eld(file: UploadFile = File(...), current_user: User = De
                 
                 # If we still failed to detect landmarks, surface a clear error
                 if landmarks_detected < 10:
-                    # Optional debug save for analysis
-                    if os.getenv('ELD_DEBUG', '0') == '1':
-                        try:
-                            os.makedirs('uploads/debug', exist_ok=True)
-                            ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S')
-                            cv2.imwrite(f"uploads/debug/eld_fail_{ts}.jpg", base_img)
-                        except Exception:
-                            pass
                     # Provide a more specific error if face was too small/large
                     try:
                         img_area2 = float(image.shape[0] * image.shape[1]) or 1.0
@@ -1781,8 +1715,6 @@ async def predict_with_eld(file: UploadFile = File(...), current_user: User = De
                     confidence = 0.0
                 confidence_percent = int(round(confidence * 100))
 
-                # Confidence cutoff disabled; log for diagnostics only
-                logging.info(f"ELD confidence check: confidence={confidence}")
 
                 return {
                     "pain_level": ui_pain_level,
@@ -1938,6 +1870,34 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
         logging.error(f"Password reset error: {e}")
         raise HTTPException(status_code=500, detail="Failed to reset password")
 
+@app.post("/api/uploads/pain-assessment-image")
+async def upload_pain_assessment_image(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Upload pain assessment image and return the URL"""
+    try:
+        # Validate file
+        if not file.content_type or not file.content_type.startswith("image/"):
+            raise HTTPException(status_code=400, detail="File must be an image")
+
+        # Generate unique filename and save
+        ext = (file.filename.split(".")[-1] or "jpg").lower()
+        ts = datetime.utcnow().strftime('%Y%m%d_%H%M%S%f')
+        filename = f"assessment_{current_user.id}_{ts}.{ext}"
+        disk_path = os.path.join("uploads", filename)
+        
+        with open(disk_path, "wb") as out:
+            out.write(file.file.read())
+        
+        image_url = f"/uploads/{filename}"
+        
+        return {"url": image_url, "filename": filename}
+        
+    except Exception as e:
+        logging.error(f"Image upload error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload image")
+
 # Health check endpoint
 @app.get("/health")
 def health_check():
@@ -1952,15 +1912,15 @@ def health_check():
 def get_scheduled_vaccination_events(db: Session = Depends(get_db)):
     """Get all scheduled vaccination events"""
     try:
-        print("Fetching scheduled vaccination events...")
+        logging.info("Fetching scheduled vaccination events...")
         events = db.query(VaccinationEvent).filter(
             VaccinationEvent.status == "Scheduled"
         ).order_by(VaccinationEvent.event_date.asc()).all()
         
-        print(f"Found {len(events)} scheduled events")
+        logging.info(f"Found {len(events)} scheduled events")
         return events
     except Exception as e:
-        print(f"Error in get_scheduled_vaccination_events: {str(e)}")
+        logging.error(f"Error in get_scheduled_vaccination_events: {str(e)}")
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Failed to fetch vaccination events: {str(e)}")

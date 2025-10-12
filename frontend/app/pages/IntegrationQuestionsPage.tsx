@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Alert } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -88,7 +88,7 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
 
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Watermark */}
               <View style={styles.watermarkContainer} pointerEvents="none">
           <View style={styles.pawWatermark}>
@@ -96,10 +96,17 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
           </View>
         </View>
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
-        <Text style={styles.title}>
-          Pain Assessment for Cats
-        </Text>
-        <Text style={styles.instructions}>Check yes or no for each of the following</Text>
+        {/* Intro */}
+        <View style={styles.introCard}>
+          <FontAwesome5 name="paw" size={18} color="#045b26" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.introTitle}>Quick check</Text>
+            <Text style={styles.introText}>Answer each question to help us evaluate your pet's condition.</Text>
+          </View>
+        </View>
+
+        <View style={[styles.card, styles.section]}>
+          <Text style={styles.instructions}>Check yes or no for each of the following</Text>
         {/* Table header */}
         <View style={styles.headerRow}>
           <View style={{ flex: 1 }} />
@@ -113,20 +120,23 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
             <TouchableOpacity
               style={[styles.checkbox, answers[idx] === true && styles.checkboxChecked]}
               onPress={() => handleAnswer(idx, true)}
+              activeOpacity={0.9}
             >
               {answers[idx] === true && <View style={styles.checkboxInner} />}
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.checkbox, answers[idx] === false && styles.checkboxChecked]}
               onPress={() => handleAnswer(idx, false)}
+              activeOpacity={0.9}
             >
               {answers[idx] === false && <View style={styles.checkboxInner} />}
             </TouchableOpacity>
           </View>
         ))}
+        </View>
         {/* Navigation buttons */}
         <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.navButton} onPress={onBack}>
+          <TouchableOpacity style={styles.navButton} onPress={onBack} activeOpacity={0.9}>
             <Text style={styles.navButtonText}>Back</Text>
           </TouchableOpacity>
           <TouchableOpacity 
@@ -136,6 +146,7 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
             ]} 
             onPress={handleNext}
             disabled={!areAllQuestionsAnswered()}
+            activeOpacity={0.9}
           >
             <Text style={[
               styles.navButtonText,
@@ -146,14 +157,14 @@ export default function IntegrationQuestionsPage({ petType, onBack, onNext }) {
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
       container: {
       flex: 1,
-      backgroundColor: '#f8f9fa',
+      backgroundColor: '#F7F9FA',
     },
   watermarkContainer: {
     position: 'absolute',
@@ -171,19 +182,48 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  title: {
-    fontSize: 23,
-    color: '#D37F52',
+  introCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  introTitle: {
+    color: '#045b26',
+    fontSize: 14,
     fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 8,
-    marginTop: 12,
+    marginBottom: 4,
+  },
+  introText: {
+    color: '#4a7c59',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  section: {
+    marginBottom: 16,
   },
   instructions: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#045b26',
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 14,
   },
   headerRow: {
     flexDirection: 'row',
@@ -220,6 +260,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#fff',
+    elevation: 1,
+    shadowColor: '#000',
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 1 },
   },
   checkboxChecked: {
     borderColor: '#D37F52',
@@ -233,18 +278,22 @@ const styles = StyleSheet.create({
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 32,
-    marginBottom: 24,
+    marginTop: 24,
+    marginBottom: 8,
   },
   navButton: {
     flex: 1,
     backgroundColor: '#D37F52',
-    borderRadius: 12,
+    borderRadius: 14,
     marginHorizontal: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     alignItems: 'center',
-    elevation: 2,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   navButtonText: {
     color: '#fff',

@@ -1,20 +1,20 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 export default function AnimalBitePage({ onBack }: { onBack?: () => void }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={onBack || (() => {})} style={{marginRight: 8}}>
-          <MaterialIcons name="chevron-left" size={32} color="#045b26" />
-        </TouchableOpacity>
-        <MaterialCommunityIcons name="dog" size={32} color="#045b26" style={{ marginRight: 12 }} />
-        <Text style={styles.title}>Animal Bite</Text>
       </View>
-      {/* Info Box */}
-      <View style={styles.infoBox}>
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Info Box */}
+        <View style={styles.infoBox}>
         {/* Rabies in Man Section */}
         <Text style={styles.sectionTitle}>1. RABIES IN MAN</Text>
         <Text style={styles.sectionText}><Text style={{fontWeight:'bold'}}>Definition:</Text> Rabies is a fatally disease caused by a virus from the saliva of an infected animal.</Text>
@@ -26,49 +26,54 @@ export default function AnimalBitePage({ onBack }: { onBack?: () => void }) {
         <Text style={[styles.sectionTitle, {marginTop: 18}]}>2. WHEN BITTEN BY A DOG</Text>
         <Text style={styles.sectionText}>1. <Text style={{fontWeight:'bold'}}>First Aid:</Text> Wash the wound immediately with soap and water.</Text>
         <Text style={styles.sectionText}>2. <Text style={{fontWeight:'bold'}}>Medical Attention:</Text> Consult a physician or call the nearest Animal Bite Center.</Text>
-      </View>
-    </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
-    paddingTop: 32,
-    paddingHorizontal: 20,
+    backgroundColor: '#ffffff',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 5,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#045b26',
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   infoBox: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 14,
-    padding: 18,
-    elevation: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   sectionTitle: {
-    color: '#fff',
+    color: '#045b26',
     fontWeight: 'bold',
-    fontSize: 17,
-    marginBottom: 6,
+    fontSize: 16,
+    marginBottom: 8,
   },
   sectionText: {
-    color: '#fff',
+    color: '#333',
     fontSize: 15,
-    marginBottom: 4,
+    marginBottom: 6,
+    lineHeight: 22,
   },
   bulletText: {
-    color: '#fff',
+    color: '#333',
     fontSize: 15,
     marginLeft: 16,
-    marginBottom: 2,
+    marginBottom: 4,
+    lineHeight: 22,
   },
 }); 

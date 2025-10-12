@@ -16,15 +16,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
-    title: { 
-        fontSize: 20, 
-        fontWeight: 'bold', 
-        color: '#000',
-        flex: 1,
-    },
-    backButton: {
-        marginRight: 16,
-    },
     content: {
         flex: 1,
         paddingHorizontal: 24,
@@ -43,9 +34,11 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     monthYear: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
         color: '#fff',
+        fontFamily: 'Jumper',
+        letterSpacing: 0.5,
     },
     navigationArrows: {
         flexDirection: 'row',
@@ -62,9 +55,11 @@ const styles = StyleSheet.create({
     dayHeader: {
         flex: 1,
         textAlign: 'center',
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '500',
+        color: 'rgba(255, 255, 255, 0.9)',
+        fontSize: 16,
+        fontWeight: '600',
+        fontFamily: 'Jumper',
+        letterSpacing: 0.3,
     },
     calendarGrid: {
         flexDirection: 'row',
@@ -79,7 +74,9 @@ const styles = StyleSheet.create({
     },
     dayText: {
         color: '#fff',
-        fontSize: 14,
+        fontSize: 16,
+        fontWeight: '600',
+        fontFamily: 'Jumper',
     },
     formContainer: {
         backgroundColor: '#fff',
@@ -411,7 +408,7 @@ export default function AppointmentSchedulingPage({ initialAppointmentType, onBa
             setReproductiveStatus(null);
         }
         
-        setSpecies(pet.species === 'Dog' ? 'Canine' : pet.species === 'Cat' ? 'Feline' : 'Please Select');
+        setSpecies(pet.species === 'Canine' ? 'Canine' : pet.species === 'Feline' ? 'Feline' : 'Please Select');
         setShowPetDropdown(false);
         setPetSearchQuery('');
     };
@@ -629,13 +626,6 @@ export default function AppointmentSchedulingPage({ initialAppointmentType, onBa
                     showsVerticalScrollIndicator={false}
                 >
                 <View style={styles.header}>
-                    <TouchableOpacity 
-                        style={styles.backButton} 
-                        onPress={onBack}
-                    >
-                        <MaterialIcons name="arrow-back" size={24} color="#045b26" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Schedule your appointment</Text>
                 </View>
 
                 {/* Calendar Component */}

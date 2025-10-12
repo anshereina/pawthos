@@ -20,11 +20,11 @@ const styles = StyleSheet.create({
     modalContent: {
         backgroundColor: '#fff',
         borderRadius: 20,
-        padding: 24,
+        padding: 16,
         marginHorizontal: 20,
-        marginTop: 20,
-        marginBottom: 0,
-        maxHeight: '95%',
+        marginTop: 10,
+        marginBottom: 10,
+        maxHeight: '80%',
         width: '90%',
         elevation: 10,
     },
@@ -32,8 +32,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-        paddingBottom: 15,
+        marginBottom: 8,
+        paddingBottom: 12,
         borderBottomWidth: 1,
         borderBottomColor: '#e0e0e0',
     },
@@ -47,11 +47,13 @@ const styles = StyleSheet.create({
         padding: 5,
     },
     modalScrollView: {
-        maxHeight: '80%',
+        maxHeight: '85%',
+        paddingTop: 0,
+        marginTop: -8,
     },
     questionContainer: {
-        marginBottom: 12,
-        padding: 12,
+        marginBottom: 10,
+        padding: 10,
         backgroundColor: '#f8f9fa',
         borderRadius: 8,
         borderLeftWidth: 4,
@@ -60,7 +62,7 @@ const styles = StyleSheet.create({
     questionText: {
         fontSize: 14,
         color: '#333',
-        marginBottom: 8,
+        marginBottom: 6,
         lineHeight: 20,
     },
     answerText: {
@@ -69,15 +71,15 @@ const styles = StyleSheet.create({
         color: '#045b26',
     },
     assessmentInfo: {
-        marginBottom: 20,
-        padding: 16,
+        marginBottom: 16,
+        padding: 14,
         backgroundColor: '#A1D998',
         borderRadius: 12,
     },
     infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 8,
+        marginBottom: 6,
     },
     infoLabel: {
         fontSize: 14,
@@ -96,6 +98,15 @@ const styles = StyleSheet.create({
     },
     painLevel2: {
         color: '#F44336', // Red for severe pain
+    },
+    painLevel3: {
+        color: '#FF7043', // Deep orange for moderate to severe
+    },
+    painLevel4: {
+        color: '#F44336', // Red for severe
+    },
+    painLevel5: {
+        color: '#B71C1C', // Dark red for worst pain possible
     },
 });
 
@@ -123,8 +134,14 @@ const getPainLevelColorStyle = (painLevel?: string) => {
         return styles.painLevel0;
     } else if (level.includes('level 1') || level.includes('mild')) {
         return styles.painLevel1;
-    } else if (level.includes('level 2') || level.includes('moderate') || level.includes('severe')) {
+    } else if (level.includes('level 2') || level.includes('moderate pain')) {
         return styles.painLevel2;
+    } else if (level.includes('level 3') || level.includes('moderate to severe')) {
+        return styles.painLevel3;
+    } else if (level.includes('level 4') || level.includes('severe')) {
+        return styles.painLevel4;
+    } else if (level.includes('level 5') || level.includes('worst')) {
+        return styles.painLevel5;
     }
     return {};
 };
@@ -156,31 +173,14 @@ export default function PainAssessmentDetailsModal({ visible, onClose, record }:
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={styles.modalScrollView} showsVerticalScrollIndicator={false}>
+                    <ScrollView 
+                        style={styles.modalScrollView} 
+                        contentContainerStyle={{ paddingTop: 0 }}
+                        showsVerticalScrollIndicator={false}
+                    >
                         {record && (
                             <>
-                                {/* Image Preview (if available) */}
-                                {(() => {
-                                    const imgField = (record as any).image_url as (string | undefined);
-                                    const built = buildImageUrl(imgField || null);
-                                    if (!built) return null;
-                                    if (built === 'local-file') {
-                                        return (
-                                            <View style={{ marginBottom: 16 }}>
-                                                <Text style={{ color: '#666' }}>
-                                                    Mobile App Image{`\n`}This image was uploaded from a mobile device and cannot be displayed in the web interface.
-                                                </Text>
-                                            </View>
-                                        );
-                                    }
-                                    return (
-                                        <Image
-                                            source={{ uri: built }}
-                                            style={{ width: '100%', height: 240, borderRadius: 8, marginBottom: 16 }}
-                                            resizeMode="cover"
-                                        />
-                                    );
-                                })()}
+
 
                                 {/* Assessment Information */}
                                 <View style={styles.assessmentInfo}>
@@ -205,7 +205,7 @@ export default function PainAssessmentDetailsModal({ visible, onClose, record }:
                                 </View>
 
                                 {/* Questions and Answers */}
-                                <Text style={[styles.modalTitle, { marginBottom: 16, fontSize: 18 }]}>Assessment Questions & Answers</Text>
+                                <Text style={[styles.modalTitle, { marginBottom: 12, fontSize: 18 }]}>Assessment Questions & Answers</Text>
                                 
                                 {painAssessmentQuestions.map((question, index) => {
                                     // Parse the assessment answers if available
@@ -248,9 +248,13 @@ export default function PainAssessmentDetailsModal({ visible, onClose, record }:
                                     }
                                     
                                     // Convert boolean values to Yes/No
-                                    if (answer === true || String(answer) === 'true') {
+                                    if (answer === true) {
                                         answer = 'Yes';
-                                    } else if (answer === false || String(answer) === 'false') {
+                                    } else if (answer === false) {
+                                        answer = 'No';
+                                    } else if (String(answer) === 'true') {
+                                        answer = 'Yes';
+                                    } else if (String(answer) === 'false') {
                                         answer = 'No';
                                     }
                                     

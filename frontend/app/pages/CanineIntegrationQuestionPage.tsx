@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Image, Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView, Image, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-export default function CanineIntegrationQuestionPage({ onSelect }: { onSelect: (label: string, data?: any) => void }) {
+export default function CanineIntegrationQuestionPage({ onSelect, onCategoryChange }: { onSelect: (label: string, data?: any) => void, onCategoryChange?: (category: string) => void }) {
+  const scrollRef = useRef<ScrollView | null>(null);
   const [currentCategory, setCurrentCategory] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState(Array(8).fill(null));
 
@@ -17,6 +18,15 @@ export default function CanineIntegrationQuestionPage({ onSelect }: { onSelect: 
     'Posture',
     'Palpation'
   ];
+
+  useEffect(() => {
+    // Ensure we are at the top whenever the category changes
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+    // Notify parent of category change for header update
+    if (onCategoryChange) {
+      onCategoryChange(categories[currentCategory]);
+    }
+  }, [currentCategory, onCategoryChange]);
 
   // Updated category data with proper scoring system (0-5 scale per category, total 0-40)
   const categoryData = [
@@ -164,62 +174,64 @@ export default function CanineIntegrationQuestionPage({ onSelect }: { onSelect: 
   const isCurrentCategoryAnswered = selectedAnswers[currentCategory] !== null;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.headerContainer}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={handleBack}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#045b26" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>{categories[currentCategory]}</Text>
-        </View>
+    <View style={styles.container}>
+      <ScrollView ref={scrollRef} style={styles.content} showsVerticalScrollIndicator={false}>
 
-        {/* Progress Indicator */}
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>
-            {currentCategory + 1} of {categories.length}
-          </Text>
-          <View style={styles.progressBar}>
-            <View 
-              style={[
-                styles.progressFill, 
-                { width: `${((currentCategory + 1) / categories.length) * 100}%` }
-              ]} 
-            />
+        {/* Intro */}
+        <View style={styles.introCard}>
+          <MaterialIcons name="pets" size={22} color="#045b26" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.introTitle}>Assessment in progress</Text>
+            <Text style={styles.introText}>Choose the image that matches your dog's current behavior for each category.</Text>
           </View>
         </View>
 
-        {/* Category Description */}
-        <View style={styles.categoryContainer}>
-          <Text style={styles.categoryTitle}>
-            Select the image that best represents your dog's {categories[currentCategory].toLowerCase()}:
-          </Text>
-        </View>
+        <View style={[styles.card, styles.section]}>
+          {/* Progress Indicator */}
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>
+              {currentCategory + 1} of {categories.length}
+            </Text>
+            <View style={styles.progressBar}>
+              <View 
+                style={[
+                  styles.progressFill, 
+                  { width: `${((currentCategory + 1) / categories.length) * 100}%` }
+                ]} 
+              />
+            </View>
+          </View>
 
-        {/* Image Grid */}
-        <View style={styles.imageGrid}>
-          {categoryData[currentCategory].images.map((image, index) => (
-            <TouchableOpacity
-              key={index}
-              style={[
-                styles.imageContainer,
-                selectedAnswers[currentCategory] === index && styles.selectedImage
-              ]}
-              onPress={() => handleImageSelect(index)}
-            >
-              <Image source={image.source} style={styles.image} />
-              <Text style={styles.imageText}>{image.text}</Text>
-            </TouchableOpacity>
-          ))}
+          {/* Category Description */}
+          <View style={styles.categoryContainer}>
+            <Text style={styles.categoryTitle}>
+              Select the image that best represents your dog's {categories[currentCategory].toLowerCase()}:
+            </Text>
+          </View>
+
+          {/* Image Grid */}
+          <View style={styles.imageGrid}>
+            {categoryData[currentCategory].images.map((image, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.imageContainer,
+                  selectedAnswers[currentCategory] === index && styles.selectedImage
+                ]}
+                onPress={() => handleImageSelect(index)}
+                activeOpacity={0.9}
+              >
+                <Image source={image.source} style={styles.image} />
+                <Text style={styles.imageText}>{image.text}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         {/* Navigation Buttons */}
         <View style={styles.navigationContainer}>
           {currentCategory > 0 && (
-            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious}>
+            <TouchableOpacity style={styles.previousButton} onPress={handlePrevious} activeOpacity={0.9}>
               <MaterialIcons name="arrow-back" size={20} color="#045b26" />
               <Text style={styles.previousButtonText}>Previous</Text>
             </TouchableOpacity>
@@ -232,6 +244,7 @@ export default function CanineIntegrationQuestionPage({ onSelect }: { onSelect: 
             ]} 
             onPress={handleNext}
             disabled={!isCurrentCategoryAnswered}
+            activeOpacity={0.9}
           >
             <Text style={styles.nextButtonText}>
               {currentCategory === categories.length - 1 ? 'Finish' : 'Next'}
@@ -240,40 +253,61 @@ export default function CanineIntegrationQuestionPage({ onSelect }: { onSelect: 
           </TouchableOpacity>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  backButton: {
-    padding: 10,
-    zIndex: 10,
-  },
-  headerTitle: {
-    color: '#D37F52',
-    fontSize: 25,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    backgroundColor: '#F7F9FA',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
+    backgroundColor: 'transparent',
+  },
+  introCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  introTitle: {
+    color: '#045b26',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  introText: {
+    color: '#4a7c59',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  section: {
+    marginBottom: 16,
   },
   progressContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   progressText: {
     color: '#045b26',
@@ -293,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
   categoryContainer: {
-    marginBottom: 24,
+    marginBottom: 16,
   },
   categoryTitle: {
     color: '#045b26',
@@ -306,7 +340,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 32,
+    marginBottom: 8,
   },
   imageContainer: {
     width: '48%',
@@ -343,11 +377,16 @@ const styles = StyleSheet.create({
   previousButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 20,
     minWidth: 120,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   previousButtonText: {
     color: '#045b26',
@@ -359,11 +398,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#D37F52',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 24,
     elevation: 4,
-    minWidth: 120,
+    minWidth: 160,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   disabledButton: {
     backgroundColor: '#ccc',

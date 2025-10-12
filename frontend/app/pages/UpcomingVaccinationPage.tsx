@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, SafeAreaView } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { getScheduledVaccinationEvents, VaccinationEvent } from '../../utils/vaccination.utils';
 
@@ -44,18 +44,17 @@ export default function UpcomingVaccinationPage({ onBack }: { onBack?: () => voi
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={onBack || (() => {})} style={{marginRight: 8}}>
-          <MaterialIcons name="chevron-left" size={32} color="#045b26" />
-        </TouchableOpacity>
-        <MaterialCommunityIcons name="calendar-check-outline" size={32} color="#000" style={{ marginRight: 12 }} />
-        <Text style={styles.title}>Vaccination </Text>
       </View>
       
-
-      {/* Upcoming Vaccination Notification Boxes */}
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Upcoming Vaccination Notification Boxes */}
       {loading ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#FF6B35" />
@@ -72,7 +71,7 @@ export default function UpcomingVaccinationPage({ onBack }: { onBack?: () => voi
         vaccinationEvents.map((event) => (
           <View key={event.id} style={styles.upcomingNotificationBox}>
             <View style={styles.iconCol}>
-              <MaterialCommunityIcons name="calendar-clock" size={28} color="#fff" />
+              <MaterialCommunityIcons name="calendar-clock" size={28} color="#045b26" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={styles.upcomingTitle}>UPCOMING VACCINATION</Text>
@@ -96,60 +95,63 @@ export default function UpcomingVaccinationPage({ onBack }: { onBack?: () => voi
           <Text style={styles.noEventsText}>No upcoming vaccination events scheduled</Text>
         </View>
       )}
-    </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
-    paddingTop: 32,
-    paddingHorizontal: 20,
+    backgroundColor: '#ffffff',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 24,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#045b26',
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   iconCol: {
-    marginRight: 14,
-    marginTop: 2,
+    marginRight: 16,
+    marginTop: 4,
   },
   upcomingNotificationBox: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    backgroundColor: '#FF6B35',
-    borderRadius: 14,
-    padding: 18,
-    marginBottom: 16,
-    elevation: 2,
+    backgroundColor: '#E8F5E8',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   upcomingTitle: {
-    color: '#fff',
+    color: '#045b26',
     fontWeight: 'bold',
-    fontSize: 17,
-    marginBottom: 8,
+    fontSize: 16,
+    marginBottom: 12,
   },
   eventInfo: {
     flexDirection: 'row',
     marginBottom: 4,
   },
   eventInfoLabel: {
-    color: '#fff',
+    color: '#045b26',
     fontSize: 14,
     fontWeight: '600',
     width: 90,
   },
   eventInfoValue: {
-    color: '#fff',
+    color: '#333',
     fontSize: 14,
     flex: 1,
+    lineHeight: 20,
   },
   loadingContainer: {
     alignItems: 'center',
@@ -174,10 +176,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#FF6B35',
+    backgroundColor: '#045b26',
     paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
+    paddingVertical: 12,
+    borderRadius: 12,
   },
   retryButtonText: {
     color: '#fff',

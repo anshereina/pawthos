@@ -4,6 +4,10 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 const FAQS = [
     {
+        question: 'How does the Pain Assessment work?',
+        answer: 'The Pain Assessment is a quick guide to help you understand your pet\'s discomfort.\n\nHow it works:\n1) Answer a short checklist about behavior and posture\n2) Optionally take or upload a clear photo of your pet\'s face\n3) We estimate pain level using vet-informed scoring\n4) You\'ll see a result (No Pain, Mild, Moderate, Severe) with simple advice and an option to book a vet\n\nFor Cats (cat grimace-focused):\n• Face: narrowed eyes, ears turned sideways/back, whiskers pulled forward, muzzle tense\n• Behavior: hiding, reduced grooming, reluctance to jump\n• Activity/Appetite: less active, decreased appetite or water intake\n\nFor Dogs (behavior & posture-focused):\n• Posture: hunched back, limping, stiffness, guarding a body part\n• Behavior: restlessness, whining, growling when touched, avoiding play\n• Activity/Appetite: reduced activity, changes in appetite or drinking\n\nNote: This tool supports—but does not replace—an actual veterinary exam. Seek immediate care for emergencies (collapse, seizures, severe bleeding, persistent vomiting).'
+    },
+    {
         question: 'How do I book an appointment?',
         answer: 'Go to the Appointment section from the menu and follow the steps to book your preferred date and time.'
     },
@@ -31,7 +35,7 @@ const FAQS = [
 
 const styles = StyleSheet.create({
     container: { flex: 1, padding: 24, backgroundColor: '#f7f7f7' },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#045b26', marginBottom: 16 },
+
     notificationBox: {
         flexDirection: 'row',
         alignItems: 'flex-start',
@@ -84,7 +88,7 @@ export default function FAQsPage() {
     const [open, setOpen] = React.useState<number | null>(null);
     return (
         <ScrollView style={styles.container}>
-            <Text style={styles.title}>Frequently Asked Questions</Text>
+            
             
             {/* Event Notification Box */}
             <View style={styles.notificationBox}>

@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 const responsibilities = [
@@ -12,50 +12,53 @@ const responsibilities = [
 
 export default function OwnersResponsibilityPage({ onBack }: { onBack?: () => void }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={onBack || (() => {})} style={{marginRight: 8}}>
-          <MaterialIcons name="chevron-left" size={32} color="#045b26" />
-        </TouchableOpacity>
-        <MaterialCommunityIcons name="dog-side" size={32} color="#045b26" style={{ marginRight: 12 }} />
-        <Text style={styles.title}>Owner's Responsibility</Text>
       </View>
-      {/* Responsibilities List */}
-      <View style={styles.responsibilityBox}>
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Responsibilities List */}
+        <View style={styles.responsibilityBox}>
         {responsibilities.map((item, idx) => (
           <View key={idx} style={styles.responsibilityItem}>
             <Text style={styles.responsibilityNumber}>{idx + 1}.</Text>
             <Text style={styles.responsibilityText}>{item}</Text>
           </View>
         ))}
-      </View>
-    </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
-    paddingTop: 32,
-    paddingHorizontal: 20,
+    backgroundColor: '#ffffff',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 5,
   },
-  title: {
-    fontSize: 26,
-    fontWeight: 'bold',
-    color: '#045b26',
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   responsibilityBox: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 14,
-    padding: 18,
-    elevation: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   responsibilityItem: {
     flexDirection: 'row',
@@ -63,15 +66,16 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   responsibilityNumber: {
-    color: '#fff',
+    color: '#045b26',
     fontWeight: 'bold',
-    fontSize: 17,
+    fontSize: 16,
     marginRight: 10,
     marginTop: 2,
   },
   responsibilityText: {
-    color: '#fff',
+    color: '#333',
     fontSize: 15,
     flex: 1,
+    lineHeight: 22,
   },
 }); 

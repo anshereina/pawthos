@@ -205,9 +205,6 @@ export default function MedicalRecordsPage({ onNavigate }: { onNavigate: (page: 
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Medical Records</Text>
-                </View>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#045b26" />
                     <Text style={{ marginTop: 16, color: '#666' }}>Loading medical records...</Text>
@@ -219,9 +216,6 @@ export default function MedicalRecordsPage({ onNavigate }: { onNavigate: (page: 
     if (error) {
         return (
             <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <Text style={styles.title}>Medical Records</Text>
-                </View>
                 <View style={styles.errorContainer}>
                     <MaterialIcons name="error" size={48} color="#ff0000" />
                     <Text style={styles.errorText}>{error}</Text>
@@ -235,11 +229,6 @@ export default function MedicalRecordsPage({ onNavigate }: { onNavigate: (page: 
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header and Title */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Medical Records</Text>
-            </View>
-
             <View style={styles.content}>
                 {/* Search Bar */}
                 <View style={styles.searchBar}>

@@ -1,23 +1,29 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Alert, RefreshControl } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Alert, RefreshControl, FlatList, Animated } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { getDashboardData, DashboardData } from '../../utils/dashboard.utils';
 import { getCurrentUser } from '../../utils/auth.utils';
+import { getScheduledVaccinationEvents, VaccinationEvent } from '../../utils/vaccination.utils';
 
 export default function HomePage({ onSelect }: { onSelect: (label: string) => void }) {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [vaccinationEvents, setVaccinationEvents] = useState<VaccinationEvent[]>([]);
+    
+    // Super fast entrance animation
+    const enterOpacity = useRef(new Animated.Value(0)).current;
+    const enterTranslateY = useRef(new Animated.Value(8)).current;
     
     const menuItems = [
-        { label: 'Schedules of Vaccination', icon: 'calendar-clock', color: '#228B22' },
+        { label: 'Upcoming Vaccination', icon: 'calendar-clock', color: '#228B22' },
         { label: "Owner's Responsibility", icon: 'account-multiple', color: '#228B22' },
         { label: 'Animal Bite', icon: 'needle', color: '#228B22' },
         { label: 'How to Retrieve my dog?', icon: 'home', color: '#228B22' },
         { label: 'Common Signs of Rabies in Pets', icon: 'alert-circle', color: '#228B22' },
-        { label: 'Safe Handling Tips for Sick Animals', icon: 'shield-check', color: '#228B22' },
-        { label: 'Local Laws on Pet Ownership (anti-Rabies Act)', icon: 'gavel', color: '#228B22' },
+        { label: 'Safe Handling Tips for your Pets', icon: 'shield-check', color: '#228B22' },
+        { label: 'Law on Pet Ownership', icon: 'gavel', color: '#228B22' },
         { label: "FAQ's and Contact Information", icon: 'help-circle', color: '#228B22' },
     ];
 
@@ -30,6 +36,21 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
         
         initializeData();
     }, []);
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(enterOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            Animated.timing(enterTranslateY, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, [enterOpacity, enterTranslateY]);
 
     // Refresh user data once on mount; further refreshes happen via pull-to-refresh
     useEffect(() => {
@@ -53,10 +74,11 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
             setLoading(true);
             console.log('Loading dashboard data...');
             
-            // Load dashboard data and user data in parallel
-            const [dashboardResult, user] = await Promise.all([
+            // Load dashboard data, user data, and vaccination events in parallel
+            const [dashboardResult, user, vaccinationResult] = await Promise.all([
                 getDashboardData(),
-                getCurrentUser()
+                getCurrentUser(),
+                getScheduledVaccinationEvents()
             ]);
             
             if (dashboardResult.success && dashboardResult.data) {
@@ -64,6 +86,13 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
                 console.log('Dashboard data loaded successfully');
             } else {
                 console.error('Dashboard data error:', dashboardResult.message);
+            }
+            
+            if (vaccinationResult.success && vaccinationResult.data) {
+                setVaccinationEvents(vaccinationResult.data);
+                console.log('Vaccination events loaded successfully');
+            } else {
+                console.error('Vaccination events error:', vaccinationResult.message);
             }
             
             // Set user data for profile image
@@ -98,110 +127,644 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
         return 'User';
     };
 
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    const getDaysRemaining = (dateString: string) => {
+        const eventDate = new Date(dateString);
+        const today = new Date();
+        const diffTime = eventDate.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
+
+    const getDaysRemainingText = (dateString: string) => {
+        const days = getDaysRemaining(dateString);
+        if (days < 0) {
+            return "Done";
+        }
+        return `${days} days remaining`;
+    };
+
+
     return (
-        <SafeAreaView style={{ flex: 1, backgroundColor: '#f5f5f5' }}>
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
+            <Animated.View style={{ flex: 1, opacity: enterOpacity, transform: [{ translateY: enterTranslateY }] }}>
             <ScrollView style={{ flex: 1, padding: 16 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#045b26"]} />}>
-                {/* Personalized Greeting */}
+                {/* Search Bar */}
                 <View style={{ 
-                    flexDirection: 'row', 
-                    alignItems: 'center', 
-                    justifyContent: 'space-between',
                     marginBottom: 24,
                     paddingHorizontal: 16,
-                    paddingVertical: 16,
                 }}>
                     <View style={{ 
                         flexDirection: 'row', 
                         alignItems: 'center',
-                        flex: 1,
+                        backgroundColor: '#FFFFFF',
+                        borderRadius: 8,
+                        paddingHorizontal: 20,
+                        paddingVertical: 16,
+                        borderWidth: 1,
+                        borderColor: '#E0E0E0',
+                        elevation: 1,
+                        shadowColor: '#000',
+                        shadowOffset: {
+                            width: 0,
+                            height: 1,
+                        },
+                        shadowOpacity: 0.05,
+                        shadowRadius: 2,
                     }}>
-                        {userData?.photo_url ? (
-                            <Image 
-                                source={{ uri: userData.photo_url }} 
-                                style={{ 
-                                    width: 72, 
-                                    height: 72, 
-                                    borderRadius: 36,
-                                    marginRight: 16
-                                }}
-                                defaultSource={require('../../assets/images/icon.png')}
-                            />
-                        ) : (
-                            <View style={{ 
-                                width: 72, 
-                                height: 72, 
-                                borderRadius: 36, 
-                                backgroundColor: '#FFD700',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                marginRight: 16
-                            }}>
-                                <MaterialIcons name="person" size={36} color="white" />
-                            </View>
-                        )}
-                        <View style={{ flex: 1 }}>
-                            {loading ? (
-                                <View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                        <Text style={{ fontSize: 20, color: '#000', fontWeight: 'bold' }}>Loading...</Text>
-                                        <ActivityIndicator size="small" color="#045b26" style={{ marginLeft: 8 }} />
-                                    </View>
-                                    <Text style={{ fontSize: 16, color: '#666' }}>Fetching your data...</Text>
-                                </View>
-                            ) : (
-                                <View>
-                                    <Text style={{ fontSize: 18, color: '#000', fontWeight: 'bold' }}>
-                                        Hi, {getUserName()}!
-                                    </Text>
-                                    <Text style={{ fontSize: 16, color: '#666' }}>
-                                        {dashboardData?.pets_count ? 
-                                            `You have ${dashboardData.pets_count} pet${dashboardData.pets_count === 1 ? '' : 's'}!` :
-                                            "Let's take care of your cutie pets!"
-                                        }
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
+                        <Ionicons name="search" size={20} color="#888888" style={{ marginRight: 16 }} />
+                        <Text style={{
+                        flex: 1,
+                            fontSize: 16,
+                            color: '#888888',
+                            fontFamily: 'Flink',
+                        }}>
+                            Search for anything
+                        </Text>
                     </View>
-                    
-                    {/* Bell Notification */}
-                    <TouchableOpacity 
-                        style={{ 
-                            padding: 8,
-                            marginLeft: 16,
-                        }}
-                        onPress={() => onSelect('Notification')}
-                    >
-                        <Ionicons name="notifications-outline" size={30} color="#045b26" />
-                    </TouchableOpacity>
                 </View>
 
 
+                {/* Vaccination Schedule Widget */}
+                {vaccinationEvents.length > 0 && (
+                    <View style={{ 
+                        marginBottom: 24,
+                        paddingHorizontal: 16,
+                    }}>
+                        {/* Header */}
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            marginBottom: 16,
+                        }}>
+                            <Text style={{
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                color: '#000',
+                                fontFamily: 'Jumper',
+                            }}>
+                                Upcoming Vaccinations
+                            </Text>
+                            <TouchableOpacity 
+                                style={{ 
+                                    backgroundColor: '#045b26',
+                                    borderRadius: 20,
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 6,
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                   
+                                }}
+                                onPress={() => onSelect('Upcoming Vaccination')}
+                            >
+                                <Text style={{
+                                    color: 'white',
+                                    fontSize: 10,
+                                    fontWeight: 'bold',
+                                    fontFamily: 'Jumper',
+                                    marginRight: 2,
+                                }}>
+                                    View All
+                                </Text>
+                                <MaterialIcons name="arrow-forward" size={14} color="white" />
+                            </TouchableOpacity>
+                        </View>
 
-                {/* Main Menu Grid */}
+                        {/* Horizontal Carousel */}
+                        <FlatList
+                            data={vaccinationEvents}
+                            horizontal
+                            showsHorizontalScrollIndicator={false}
+                            keyExtractor={(item) => item.id.toString()}
+                            contentContainerStyle={{
+                                paddingRight: 16,
+                            }}
+                            renderItem={({ item, index }) => (
+                                <View style={{
+                                    width: 280,
+                                    marginRight: 16,
+                                    backgroundColor: '#FFFFFF',
+                                    borderRadius: 20,
+                                    padding: 20,
+                                    borderWidth: 1,
+                                    borderColor: '#E8E8E8',
+                                }}>
+                                    {/* Header with gradient background */}
+                            <View style={{ 
+                                        backgroundColor: '#045b26',
+                                        borderRadius: 16,
+                                        padding: 16,
+                                        marginBottom: 16,
+                                        flexDirection: 'row',
+                                alignItems: 'center',
+                                    }}>
+                                        <View style={{
+                                            backgroundColor: 'rgba(255,255,255,0.2)',
+                                            borderRadius: 12,
+                                            padding: 8,
+                                            marginRight: 12,
+                                        }}>
+                                            <MaterialCommunityIcons name="calendar-clock" size={24} color="white" />
+                            </View>
+                        <View style={{ flex: 1 }}>
+                                            <Text style={{
+                                                fontSize: 16,
+                                                fontWeight: 'bold',
+                                                color: 'white',
+                                                fontFamily: 'Jumper',
+                                                marginBottom: 2,
+                                            }}>
+                                                {item.event_title}
+                                            </Text>
+                                            <Text style={{
+                                                fontSize: 12,
+                                                color: 'rgba(255,255,255,0.8)',
+                                                fontFamily: 'Flink',
+                                            }}>
+                                                {index + 1} of {vaccinationEvents.length}
+                                            </Text>
+                                        </View>
+                                    </View>
+
+                                    {/* Event Details */}
+                                    <View style={{ marginBottom: 16 }}>
+                                        <View style={{
+                                            backgroundColor: '#F8F9FA',
+                                            borderRadius: 12,
+                                            padding: 16,
+                                            marginBottom: 12,
+                                        }}>
+                                            <View style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                                marginBottom: 6,
+                                            }}>
+                                                <MaterialCommunityIcons name="map-marker" size={16} color="#666" />
+                                                <Text style={{
+                                                    fontSize: 14,
+                                                    color: '#666',
+                                                    fontFamily: 'Flink',
+                                                    marginLeft: 6,
+                                                }}>
+                                                    {item.barangay}
+                                                </Text>
+                                </View>
+                                            <View style={{
+                                                flexDirection: 'row',
+                                                alignItems: 'center',
+                                            }}>
+                                                <MaterialCommunityIcons name="calendar" size={16} color="#666" />
+                                                <Text style={{
+                                                    fontSize: 14,
+                                                    color: '#666',
+                                                    fontFamily: 'Flink',
+                                                    marginLeft: 6,
+                                                }}>
+                                                    {formatDate(item.event_date)}
+                                    </Text>
+                                            </View>
+                                        </View>
+
+                                        {/* Days Remaining Badge */}
+                                        <View style={{
+                                            backgroundColor: getDaysRemaining(item.event_date) < 0 ? '#E8F5E8' : '#E8F5E8',
+                                            borderRadius: 20,
+                                            paddingHorizontal: 16,
+                                            paddingVertical: 8,
+                                            alignSelf: 'flex-start',
+                                            flexDirection: 'row',
+                                            alignItems: 'center',
+                                        }}>
+                                            <MaterialCommunityIcons 
+                                                name={getDaysRemaining(item.event_date) < 0 ? "check-circle" : "clock-outline"} 
+                                                size={16} 
+                                                color="#045b26" 
+                                            />
+                                            <Text style={{
+                                                fontSize: 14,
+                                                color: '#045b26',
+                                                fontFamily: 'Flink',
+                                                fontWeight: 'bold',
+                                                marginLeft: 6,
+                                            }}>
+                                                {getDaysRemainingText(item.event_date)}
+                                    </Text>
+                                        </View>
+                                    </View>
+                                </View>
+                            )}
+                        />
+                    </View>
+                )}
+
+                {/* Quick Stats Cards */}
+                <View style={{ 
+                    marginBottom: 24,
+                    paddingHorizontal: 16,
+                }}>
+                    <Text style={{
+                        fontSize: 18,
+                        fontWeight: 'bold',
+                        color: '#000',
+                        fontFamily: 'Jumper',
+                        marginBottom: 16,
+                    }}>
+                        Quick Stats
+                    </Text>
+                    <View style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                    }}>
+                        {/* Total Pets Card */}
+                        <View style={{
+                            flex: 1,
+                            backgroundColor: '#E8F5E8',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginRight: 8,
+                            alignItems: 'center',
+                        }}>
+                            <MaterialCommunityIcons name="paw" size={24} color="#045b26" />
+                            <Text style={{
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                color: '#045b26',
+                                marginTop: 8,
+                            }}>
+                                {dashboardData?.pets_count || 0}
+                            </Text>
+                            <Text style={{
+                                fontSize: 12,
+                                color: '#666',
+                                fontFamily: 'Flink',
+                                textAlign: 'center',
+                            }}>
+                                Total Pets
+                            </Text>
+                        </View>
+
+                        {/* Upcoming Appointments Card */}
+                        <View style={{
+                            flex: 1,
+                            backgroundColor: '#E8F5E8',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginHorizontal: 4,
+                            alignItems: 'center',
+                        }}>
+                            <MaterialCommunityIcons name="calendar-clock" size={24} color="#045b26" />
+                            <Text style={{
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                color: '#045b26',
+                                marginTop: 8,
+                            }}>
+                                {vaccinationEvents.length}
+                            </Text>
+                            <Text style={{
+                                fontSize: 12,
+                                color: '#666',
+                                fontFamily: 'Flink',
+                                textAlign: 'center',
+                            }}>
+                                Upcoming Events
+                            </Text>
+                        </View>
+
+                        {/* Health Records Card */}
+                        <View style={{
+                            flex: 1,
+                            backgroundColor: '#E8F5E8',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginLeft: 8,
+                            alignItems: 'center',
+                        }}>
+                            <MaterialCommunityIcons name="file-document" size={24} color="#045b26" />
+                            <Text style={{
+                                fontSize: 20,
+                                fontWeight: 'bold',
+                                color: '#045b26',
+                                marginTop: 8,
+                            }}>
+                                12
+                            </Text>
+                            <Text style={{
+                                fontSize: 12,
+                                color: '#666',
+                                fontFamily: 'Flink',
+                                textAlign: 'center',
+                            }}>
+                                Health Records
+                            </Text>
+                        </View>
+                    </View>
+                </View>
+
+                {/* Quick Actions */}
+                <View style={{ 
+                    marginBottom: 24,
+                    paddingHorizontal: 16,
+                }}>
+                    <Text style={{
+                        fontSize: 18,
+                        fontWeight: 'bold',
+                        color: '#000',
+                        fontFamily: 'Jumper',
+                        marginBottom: 16,
+                    }}>
+                        Quick Actions
+                    </Text>
                 <View style={{ 
                     flexDirection: 'row', 
                     flexWrap: 'wrap', 
                     justifyContent: 'space-between',
-                    paddingHorizontal: 8,
-                    marginBottom: 80 // Space for floating action button
-                }}>
-                    {menuItems.map((item, index) => (
-                    <TouchableOpacity
-                            key={item.label}
-                        style={{
-                                width: '48%',
-                                backgroundColor: item.color,
+                    }}>
+                        {/* Pain Assessment */}
+                        <TouchableOpacity style={{
+                            width: '48%',
+                            backgroundColor: '#045b26',
                             borderRadius: 16,
                             padding: 20,
                             marginBottom: 16,
                             alignItems: 'center',
-                                elevation: 3,
-                                minHeight: 120,
+                            elevation: 2,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                        }} onPress={() => onSelect('Pain Assessment')}>
+                            <MaterialCommunityIcons name="heart-pulse" size={32} color="white" />
+                            <Text style={{
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: 14,
+                                textAlign: 'center',
+                                fontFamily: 'Jumper',
+                                marginTop: 8,
+                            }}>
+                                Pain Assessment
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Book Appointment */}
+                        <TouchableOpacity style={{
+                            width: '48%',
+                            backgroundColor: '#045b26',
+                            borderRadius: 16,
+                            padding: 20,
+                            marginBottom: 16,
+                            alignItems: 'center',
+                            elevation: 2,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                        }} onPress={() => onSelect('Appointment')}>
+                            <MaterialCommunityIcons name="calendar-plus" size={32} color="white" />
+                            <Text style={{
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: 14,
+                                textAlign: 'center',
+                                fontFamily: 'Jumper',
+                                marginTop: 8,
+                            }}>
+                                Book Appointment
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* Add Pet */}
+                        <TouchableOpacity style={{
+                            width: '48%',
+                            backgroundColor: '#045b26',
+                            borderRadius: 16,
+                            padding: 20,
+                            marginBottom: 16,
+                            alignItems: 'center',
+                            elevation: 2,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                        }} onPress={() => onSelect('Register Pet')}>
+                            <MaterialCommunityIcons name="plus-circle" size={32} color="white" />
+                            <Text style={{
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: 14,
+                                textAlign: 'center',
+                                fontFamily: 'Jumper',
+                                marginTop: 8,
+                            }}>
+                                Add Pet
+                            </Text>
+                        </TouchableOpacity>
+
+                        {/* View Pets */}
+                        <TouchableOpacity style={{
+                            width: '48%',
+                            backgroundColor: '#045b26',
+                            borderRadius: 16,
+                            padding: 20,
+                            marginBottom: 16,
+                            alignItems: 'center',
+                            elevation: 2,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.1,
+                            shadowRadius: 4,
+                        }} onPress={() => onSelect('Pet profile')}>
+                            <MaterialCommunityIcons name="paw" size={32} color="white" />
+                            <Text style={{
+                                color: 'white',
+                                fontWeight: 'bold',
+                                fontSize: 14,
+                                textAlign: 'center',
+                                fontFamily: 'Jumper',
+                                marginTop: 8,
+                            }}>
+                                View Pets
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Health Alerts */}
+                <View style={{ 
+                    marginBottom: 24,
+                    paddingHorizontal: 16,
+                }}>
+                    <Text style={{
+                        fontSize: 18,
+                        fontWeight: 'bold',
+                        color: '#000',
+                        fontFamily: 'Jumper',
+                        marginBottom: 16,
+                    }}>
+                        Health Alerts
+                    </Text>
+                    <View style={{
+                        backgroundColor: '#E8F5E8',
+                        borderRadius: 16,
+                        padding: 16,
+                        borderLeftWidth: 4,
+                        borderLeftColor: '#045b26',
+                    }}>
+                        <View style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            marginBottom: 8,
+                        }}>
+                            <MaterialCommunityIcons name="alert-circle" size={20} color="#045b26" />
+                            <Text style={{
+                                fontSize: 16,
+                                fontWeight: 'bold',
+                                color: '#000',
+                                fontFamily: 'Jumper',
+                                marginLeft: 8,
+                            }}>
+                                Vaccination Due Soon
+                            </Text>
+                        </View>
+                        <Text style={{
+                            fontSize: 14,
+                            color: '#666',
+                            fontFamily: 'Flink',
+                            lineHeight: 20,
+                        }}>
+                            Max's rabies vaccination is due in 3 days. Schedule an appointment to keep your pet protected.
+                        </Text>
+                    </View>
+                </View>
+
+                {/* Emergency Contacts */}
+                <View style={{ 
+                    marginBottom: 24,
+                    paddingHorizontal: 16,
+                }}>
+                    <Text style={{
+                        fontSize: 18,
+                        fontWeight: 'bold',
+                        color: '#000',
+                        fontFamily: 'Jumper',
+                        marginBottom: 16,
+                    }}>
+                        Emergency Contacts
+                    </Text>
+                    <View style={{
+                        flexDirection: 'row',
+                        justifyContent: 'space-between',
+                    }}>
+                        <TouchableOpacity style={{
+                            flex: 1,
+                            backgroundColor: '#E8F5E8',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginRight: 8,
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: '#C8E6C9',
+                        }}>
+                            <MaterialCommunityIcons name="phone" size={24} color="#045b26" />
+                            <Text style={{
+                                fontSize: 12,
+                                fontWeight: 'bold',
+                                color: '#045b26',
+                                fontFamily: 'Jumper',
+                                marginTop: 8,
+                                textAlign: 'center',
+                            }}>
+                                BAI Rabies Hotline
+                            </Text>
+                            <Text style={{
+                                fontSize: 10,
+                                color: '#666',
+                                fontFamily: 'Flink',
+                                textAlign: 'center',
+                            }}>
+                                0968 667 6812
+                                8528 2240 local 1506
+                            </Text>
+                        </TouchableOpacity>
+
+                        <TouchableOpacity style={{
+                            flex: 1,
+                            backgroundColor: '#E8F5E8',
+                            borderRadius: 16,
+                            padding: 16,
+                            marginLeft: 8,
+                            alignItems: 'center',
+                            borderWidth: 1,
+                            borderColor: '#C8E6C9',
+                        }}>
+                            <MaterialCommunityIcons name="hospital" size={24} color="#045b26" />
+                            <Text style={{
+                                fontSize: 12,
+                                fontWeight: 'bold',
+                                color: '#045b26',
+                                fontFamily: 'Jumper',
+                                marginTop: 8,
+                                textAlign: 'center',
+                            }}>
+                                City Vet Office
+                            </Text>
+                            <Text style={{
+                                fontSize: 10,
+                                color: '#666',
+                                fontFamily: 'Flink',
+                                textAlign: 'center',
+                            }}>
+                                cvosanpedro0324@gmail.com
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* More Services */}
+                <View style={{ 
+                    marginBottom: 100,
+                    paddingHorizontal: 16,
+                }}>
+                    <Text style={{
+                        fontSize: 18,
+                        fontWeight: 'bold',
+                        color: '#000',
+                        fontFamily: 'Jumper',
+                        marginBottom: 16,
+                    }}>
+                        More Services
+                    </Text>
+                    <View style={{ 
+                        flexDirection: 'row', 
+                        flexWrap: 'wrap', 
+                        justifyContent: 'space-between',
+                    }}>
+                        {menuItems.map((item, index) => (
+                    <TouchableOpacity
+                            key={item.label}
+                        style={{
+                                width: '48%',
+                                backgroundColor: '#045b26',
+                                borderRadius: 16,
+                                padding: 16,
+                                marginBottom: 16,
+                                alignItems: 'center',
+                                elevation: 2,
+                                minHeight: 100,
                                 justifyContent: 'center'
                         }}
                             onPress={() => {
-                                if (item.label === 'Schedules of Vaccination') {
+                                if (item.label === 'Upcoming Vaccination') {
                                     onSelect('Upcoming Vaccination');
                                 } else if (item.label === "Owner's Responsibility") {
                                     onSelect("Owner's Responsibility");
@@ -220,42 +783,26 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
                     >
                             <MaterialCommunityIcons 
                                 name={item.icon as any} 
-                                size={32} 
+                                size={28} 
                                 color="white" 
                                 style={{ marginBottom: 8 }}
                             />
                             <Text style={{ 
                                 color: 'white', 
                                 fontWeight: 'bold', 
-                                fontSize: 14,
+                                fontSize: 12,
                                 textAlign: 'center',
-                                lineHeight: 18
+                                lineHeight: 16,
+                                fontFamily: 'Jumper'
                             }}>
                                 {item.label}
                             </Text>
                     </TouchableOpacity>
                 ))}
+                    </View>
             </View>
             </ScrollView>
-
-            {/* Floating Action Button */}
-            <TouchableOpacity
-                style={{
-                    position: 'absolute',
-                    bottom: 24,
-                    right: 24,
-                    width: 100, // current size
-                    height: 100, // current size
-                    borderRadius: 50, // current size
-                    backgroundColor: '#045b26',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    elevation: 8
-                }}
-                onPress={() => onSelect('Integration')}
-            >
-                <FontAwesome5 name="paw" size={50} color="white" />
-            </TouchableOpacity>
+            </Animated.View>
         </SafeAreaView>
     );
 }

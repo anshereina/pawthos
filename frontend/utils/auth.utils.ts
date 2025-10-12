@@ -15,6 +15,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const API_BASE_URL = getApiUrl();
 
+// Helper: fetch with timeout to avoid indefinite loading spinners
+async function fetchWithTimeout(resource: string, options: RequestInit = {}, timeoutMs = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(resource, { ...options, signal: controller.signal });
+    return resp;
+  } finally {
+    clearTimeout(id);
+  }
+}
+
 // Remember Me functionality
 export async function saveRememberMeCredentials(email: string, password: string): Promise<void> {
   try {
@@ -116,13 +128,13 @@ export async function login(
   rememberMe: boolean = false
 ): Promise<AuthResult> {
   try {
-    const response = await fetch(`${API_BASE_URL}/login`, {
+    const response = await fetchWithTimeout(`${API_BASE_URL}/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ email, password }),
-    });
+    }, 8000);
 
     const data = await response.json();
     
@@ -158,11 +170,14 @@ export async function login(
         message: data.detail || "Login failed" 
       };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Login error:', error);
-    return { 
-      success: false, 
-      message: "Network error. Please check your connection and try again." 
+    const timedOut = typeof error?.name === 'string' && error.name === 'AbortError';
+    return {
+      success: false,
+      message: timedOut
+        ? 'Connection timed out. Ensure your device can reach the API and try again.'
+        : 'Network error. Please check your Wi‑Fi/VPN and API URL.'
     };
   }
 }

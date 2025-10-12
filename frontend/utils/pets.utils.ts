@@ -28,6 +28,7 @@ export type PetCreateData = {
   breed?: string;
   gender?: string;
   reproductive_status?: string;
+  photo_url?: string;
 };
 
 export type PetResult = {
@@ -187,6 +188,54 @@ export async function updatePet(petId: number, petData: Partial<PetData>): Promi
     return { success: true, data: pet, message: "Pet updated successfully!" };
   } catch (error) {
     console.error('Update pet error:', error);
+    return { 
+      success: false, 
+      message: "Network error. Please check your connection and try again." 
+    };
+  }
+}
+
+// Upload pet photo
+export async function uploadPetPhoto(petId: number, photoUri: string): Promise<{ success: boolean; photo_url?: string; message?: string }> {
+  try {
+    const token = await getAuthToken();
+    if (!token) {
+      return { success: false, message: "No authentication token found" };
+    }
+
+    // Create FormData for file upload
+    const formData = new FormData();
+    formData.append('file', {
+      uri: photoUri,
+      type: 'image/jpeg',
+      name: `pet_${petId}_${Date.now()}.jpg`,
+    } as any);
+
+    const response = await fetch(`${API_BASE_URL}/upload-pet-photo?pet_id=${petId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        // Don't set Content-Type for FormData, let fetch set it automatically
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      let message = 'Failed to upload pet photo';
+      try {
+        const errorData = JSON.parse(errorText);
+        message = errorData.detail || message;
+      } catch (_) {
+        if (errorText) message = errorText;
+      }
+      return { success: false, message };
+    }
+
+    const result = await response.json();
+    return { success: true, photo_url: result.photo_url, message: "Photo uploaded successfully!" };
+  } catch (error) {
+    console.error('Upload pet photo error:', error);
     return { 
       success: false, 
       message: "Network error. Please check your connection and try again." 

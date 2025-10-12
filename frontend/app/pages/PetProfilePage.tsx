@@ -1,129 +1,169 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, ScrollView, Image, RefreshControl } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, Alert, ScrollView, Image, RefreshControl, Animated, TextInput } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getPets, PetData } from '../../utils/pets.utils';
 import { isAuthenticated } from '../../utils/auth.utils';
+import { getApiUrl } from '../../utils/config';
 
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#f7f7f7' 
+        backgroundColor: '#ffffff' 
     },
+    content: {
+        flex: 1,
+        paddingHorizontal: 16,
+    },
+    // Header
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 24,
-        paddingVertical: 16,
+        paddingVertical: 20,
         backgroundColor: '#fff',
-        elevation: 2,
     },
     title: { 
-        fontSize: 28, 
+        fontSize: 24, 
         fontWeight: 'bold', 
-        color: '#000' 
+        color: '#000',
+        fontFamily: 'Jumper',
     },
     addPetBtn: {
         backgroundColor: '#045b26',
         borderRadius: 12,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        elevation: 2,
+        paddingHorizontal: 16,
+        paddingVertical: 8,
     },
     addPetText: { 
         color: '#fff', 
         fontWeight: 'bold', 
-        fontSize: 11 
+        fontSize: 12,
+        fontFamily: 'Jumper',
     },
+    // Search Bar
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#f0f0f0',
-        borderRadius: 25,
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 8,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
         marginTop: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+    },
+    searchInput: { 
+        flex: 1,
+        fontSize: 16,
+        color: '#000',
+        fontFamily: 'Flink',
+        marginLeft: 16,
+        paddingVertical: 0,
+    },
+    searchPlaceholder: {
+        color: '#888888',
+    },
+    
+    // Quick Stats
+    statsContainer: {
+        marginBottom: 24,
+    },
+    statsTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#000',
+        fontFamily: 'Jumper',
         marginBottom: 16,
     },
-    searchText: { 
-        color: '#999', 
-        fontSize: 16, 
-        flex: 1, 
-        marginLeft: 12 
+    statsRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
+    statCard: {
+        flex: 1,
+        backgroundColor: '#E8F5E8',
+        borderRadius: 16,
+        padding: 16,
+        marginHorizontal: 4,
+        alignItems: 'center',
+    },
+    statIcon: {
+        marginBottom: 8,
+    },
+    statNumber: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#045b26',
+        marginBottom: 4,
+    },
+    statLabel: {
+        fontSize: 12,
+        color: '#666',
+        fontFamily: 'Flink',
+        textAlign: 'center',
+    },
+    // Filter Tabs
     filterContainer: {
         flexDirection: 'row',
-        marginBottom: 16,
+        marginBottom: 24,
+        backgroundColor: '#F8F9FA',
+        borderRadius: 12,
+        padding: 4,
     },
-    filterBtn: {
+    filterTab: {
         flex: 1,
-        paddingVertical: 4,
-        paddingHorizontal: 6,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         borderRadius: 8,
-        marginRight: 12,
-        borderWidth: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-        minWidth: 0,
     },
-    filterBtnActive: {
+    filterTabActive: {
         backgroundColor: '#045b26',
-        borderColor: '#045b26',
     },
-    filterBtnInactive: {
-        backgroundColor: '#fff',
-        borderColor: '#045b26',
+    filterTabInactive: {
+        backgroundColor: 'transparent',
     },
-    filterText: { 
-        fontSize: 11, 
-        fontWeight: '500',
-        textAlign: 'center',
-        width: '100%',
+    filterText: {
+        fontSize: 14,
+        fontWeight: '600',
+        fontFamily: 'Jumper',
     },
-    filterTextActive: { 
-        color: '#fff' 
+    filterTextActive: {
+        color: '#FFFFFF',
     },
-    filterTextInactive: { 
-        color: '#045b26' 
+    filterTextInactive: {
+        color: '#666',
     },
-    content: {
-        flex: 1,
-        paddingHorizontal: 24,
-    },
-    emptyStateText: { 
-        fontSize: 18, 
-        color: '#000', 
-        textAlign: 'center',
-        marginTop: 16,
-    },
+    // Pet Cards
     petsContainer: {
         paddingBottom: 24,
     },
     petCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 20,
         marginBottom: 16,
         borderWidth: 1,
-        borderColor: '#045b26',
+        borderColor: '#E8E8E8',
         flexDirection: 'row',
         alignItems: 'center',
-        elevation: 2,
     },
     petImageContainer: {
         width: 80,
         height: 80,
-        borderRadius: 8,
-        backgroundColor: '#000',
+        borderRadius: 12,
+        backgroundColor: '#F5F5F5',
         alignItems: 'center',
         justifyContent: 'center',
-        marginRight: 16,
+        marginRight: 20,
         overflow: 'hidden',
     },
     petImage: {
         width: '100%',
         height: '100%',
-        borderRadius: 8,
+        borderRadius: 12,
         resizeMode: 'cover',
     },
     petInfoContainer: {
@@ -131,16 +171,60 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     petName: {
-        fontSize: 14,
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#045b26',
-        textTransform: 'uppercase',
+        color: '#000',
+        fontFamily: 'Jumper',
         marginBottom: 4,
+    },
+    petInfo: {
+        fontSize: 14,
+        color: '#666',
+        fontFamily: 'Flink',
+        marginBottom: 2,
     },
     petId: {
         fontSize: 12,
         color: '#045b26',
-        fontWeight: '500',
+        fontWeight: '600',
+        fontFamily: 'Flink',
+    },
+    
+    // Empty State
+    emptyContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 60,
+    },
+    emptyIcon: {
+        marginBottom: 16,
+    },
+    emptyTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#666',
+        fontFamily: 'Jumper',
+        marginBottom: 8,
+    },
+    emptyText: {
+        fontSize: 14,
+        color: '#999',
+        fontFamily: 'Flink',
+        textAlign: 'center',
+    },
+    
+    // Loading State
+    loadingContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 40,
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+        fontFamily: 'Flink',
+        textAlign: 'center',
     },
 });
 
@@ -150,10 +234,30 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    
+    // Entrance animations
+    const enterOpacity = useRef(new Animated.Value(0)).current;
+    const enterTranslateY = useRef(new Animated.Value(8)).current;
 
     useEffect(() => {
         checkAuthAndLoadPets();
     }, []);
+
+    useEffect(() => {
+        Animated.parallel([
+            Animated.timing(enterOpacity, {
+                toValue: 1,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+            Animated.timing(enterTranslateY, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }),
+        ]).start();
+    }, [enterOpacity, enterTranslateY]);
 
     const checkAuthAndLoadPets = async () => {
         const authenticated = await isAuthenticated();
@@ -185,7 +289,8 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                     console.log(`Pet ${index + 1}:`, {
                         name: pet.name,
                         photo_url: pet.photo_url,
-                        hasPhoto: !!pet.photo_url
+                        hasPhoto: !!pet.photo_url,
+                        fullPhotoUrl: getPhotoUrl(pet.photo_url)
                     });
                 });
             } else {
@@ -246,16 +351,46 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
     };
 
     const getFilteredPets = () => {
+        let filtered = pets;
+        
+        // Apply species filter
         switch (activeFilter) {
-            case 'All':
-                return pets;
             case 'Cats':
-                return pets.filter(pet => pet.species.toLowerCase() === 'cat' || pet.species.toLowerCase() === 'feline');
+                filtered = pets.filter(pet => {
+                    const species = pet.species.toLowerCase();
+                    return species === 'cat' || species === 'feline';
+                });
+                break;
             case 'Dogs':
-                return pets.filter(pet => pet.species.toLowerCase() === 'dog' || pet.species.toLowerCase() === 'canine');
+                filtered = pets.filter(pet => {
+                    const species = pet.species.toLowerCase();
+                    return species === 'dog' || species === 'canine';
+                });
+                break;
             default:
-                return pets;
+                filtered = pets;
         }
+        
+        // Apply search filter
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase().trim();
+            filtered = filtered.filter(pet =>
+                pet.name.toLowerCase().includes(query) ||
+                pet.species.toLowerCase().includes(query) ||
+                pet.pet_id.toLowerCase().includes(query) ||
+                (pet.breed && pet.breed.toLowerCase().includes(query))
+            );
+        }
+        
+        return filtered;
+    };
+
+    const handleSearchChange = (text: string) => {
+        setSearchQuery(text);
+    };
+
+    const clearSearch = () => {
+        setSearchQuery('');
     };
 
     const formatPetAge = (dateOfBirth: string | undefined) => {
@@ -292,194 +427,263 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
         }
     };
 
+    // Helper function to construct full photo URL
+    const getPhotoUrl = (photoUrl: string | undefined) => {
+        if (!photoUrl) return null;
+        
+        // If it's already a full URL, return as is
+        if (photoUrl.startsWith('http')) {
+            return photoUrl;
+        }
+        
+        // If it starts with /uploads/, construct full URL
+        if (photoUrl.startsWith('/uploads/')) {
+            const baseUrl = getApiUrl().replace('/api', '');
+            return `${baseUrl}${photoUrl}`;
+        }
+        
+        // If it's just a filename, assume it's in uploads
+        const baseUrl = getApiUrl().replace('/api', '');
+        return `${baseUrl}/uploads/${photoUrl}`;
+    };
+
     const filteredPets = getFilteredPets();
+    const totalPets = pets.length;
+    const filteredCount = filteredPets.length;
+    const cats = pets.filter(pet => {
+        const species = pet.species.toLowerCase();
+        return species === 'cat' || species === 'feline';
+    }).length;
+    const dogs = pets.filter(pet => {
+        const species = pet.species.toLowerCase();
+        return species === 'dog' || species === 'canine';
+    }).length;
+    
+    // Show filtered counts when searching
+    const displayStats = searchQuery.trim() ? {
+        total: filteredCount,
+        cats: filteredPets.filter(pet => {
+            const species = pet.species.toLowerCase();
+            return species === 'cat' || species === 'feline';
+        }).length,
+        dogs: filteredPets.filter(pet => {
+            const species = pet.species.toLowerCase();
+            return species === 'dog' || species === 'canine';
+        }).length,
+        isFiltered: true
+    } : {
+        total: totalPets,
+        cats: cats,
+        dogs: dogs,
+        isFiltered: false
+    };
 
     return (
         <SafeAreaView style={styles.container}>
             {/* Header Section */}
             <View style={styles.header}>
-                <Text style={styles.title}>See my pets</Text>
+                <Text style={styles.title}>My Pets</Text>
                 <TouchableOpacity 
                     style={styles.addPetBtn}
                     onPress={() => onNavigate('Register Pet')}
                 >
-                    <Text style={styles.addPetText}>Add new pet</Text>
+                    <Text style={styles.addPetText}>Add Pet</Text>
                 </TouchableOpacity>
             </View>
 
-            <ScrollView 
-                style={styles.content}
-                refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#045b26"]} />
-                }
-            >
-                {/* Search Bar */}
-                <View style={styles.searchBar}>
-                    <MaterialIcons name="menu" size={22} color="#666" />
-                    <Text style={styles.searchText}>Search here</Text>
-                    <MaterialIcons name="search" size={22} color="#666" />
-                </View>
-
-                {/* Filter Buttons */}
-                <View style={styles.filterContainer}>
-                    <TouchableOpacity 
-                        style={[
-                            styles.filterBtn, 
-                            activeFilter === 'All' ? styles.filterBtnActive : styles.filterBtnInactive
-                        ]}
-                        onPress={() => handleTabPress('All')}
-                    >
-                        <Text style={[
-                            styles.filterText, 
-                            activeFilter === 'All' ? styles.filterTextActive : styles.filterTextInactive
-                        ]}>
-                            All
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[
-                            styles.filterBtn, 
-                            activeFilter === 'Cats' ? styles.filterBtnActive : styles.filterBtnInactive
-                        ]}
-                        onPress={() => handleTabPress('Cats')}
-                    >
-                        <Text style={[
-                            styles.filterText, 
-                            activeFilter === 'Cats' ? styles.filterTextActive : styles.filterTextInactive
-                        ]}>
-                            Cats
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={[
-                            styles.filterBtn, 
-                            activeFilter === 'Dogs' ? styles.filterBtnActive : styles.filterBtnInactive
-                        ]}
-                        onPress={() => handleTabPress('Dogs')}
-                    >
-                        <Text style={[
-                            styles.filterText, 
-                            activeFilter === 'Dogs' ? styles.filterTextActive : styles.filterTextInactive
-                        ]}>
-                            Dogs
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Pet Display Area */}
-                {loading ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <ActivityIndicator size="large" color="#045b26" />
-                        <Text style={{ marginTop: 16, color: '#666', fontSize: 16 }}>Loading pets...</Text>
+            <Animated.View style={{ flex: 1, opacity: enterOpacity, transform: [{ translateY: enterTranslateY }] }}>
+                <ScrollView 
+                    style={styles.content}
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={["#045b26"]} />
+                    }
+                >
+                    {/* Search Bar */}
+                    <View style={styles.searchBar}>
+                        <MaterialIcons name="search" size={20} color="#888888" />
+                        <TextInput
+                            style={styles.searchInput}
+                            placeholder="Search pets..."
+                            placeholderTextColor="#888888"
+                            value={searchQuery}
+                            onChangeText={handleSearchChange}
+                            autoCapitalize="none"
+                            autoCorrect={false}
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={clearSearch} activeOpacity={0.7}>
+                                <MaterialIcons name="clear" size={20} color="#888888" />
+                            </TouchableOpacity>
+                        )}
                     </View>
-                ) : error ? (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <MaterialIcons name="error-outline" size={48} color="#ff6b6b" />
-                        <Text style={{ marginTop: 16, color: '#ff6b6b', fontSize: 16, textAlign: 'center' }}>
-                            {error}
+
+                    {/* Quick Stats */}
+                    <View style={styles.statsContainer}>
+                        <Text style={styles.statsTitle}>
+                            {displayStats.isFiltered ? `Search Results${searchQuery ? ` for "${searchQuery}"` : ''}` : 'Pet Overview'}
                         </Text>
+                        <View style={styles.statsRow}>
+                            <View style={styles.statCard}>
+                                <MaterialCommunityIcons name="paw" size={24} color="#045b26" style={styles.statIcon} />
+                                <Text style={styles.statNumber}>{displayStats.total}</Text>
+                                <Text style={styles.statLabel}>
+                                    {displayStats.isFiltered ? 'Found' : 'Total Pets'}
+                                </Text>
+                            </View>
+                            <View style={styles.statCard}>
+                                <MaterialCommunityIcons name="cat" size={24} color="#045b26" style={styles.statIcon} />
+                                <Text style={styles.statNumber}>{displayStats.cats}</Text>
+                                <Text style={styles.statLabel}>Cats</Text>
+                            </View>
+                            <View style={styles.statCard}>
+                                <MaterialCommunityIcons name="dog" size={24} color="#045b26" style={styles.statIcon} />
+                                <Text style={styles.statNumber}>{displayStats.dogs}</Text>
+                                <Text style={styles.statLabel}>Dogs</Text>
+                            </View>
+                        </View>
+                    </View>
+
+                    {/* Filter Tabs */}
+                    <View style={styles.filterContainer}>
                         <TouchableOpacity 
-                            style={{ 
-                                backgroundColor: '#045b26', 
-                                paddingHorizontal: 20, 
-                                paddingVertical: 10, 
-                                borderRadius: 8, 
-                                marginTop: 16 
-                            }}
-                            onPress={loadPets}
+                            style={[
+                                styles.filterTab, 
+                                activeFilter === 'All' ? styles.filterTabActive : styles.filterTabInactive
+                            ]}
+                            onPress={() => handleTabPress('All')}
                         >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Retry</Text>
+                            <Text style={[
+                                styles.filterText, 
+                                activeFilter === 'All' ? styles.filterTextActive : styles.filterTextInactive
+                            ]}>
+                                All
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[
+                                styles.filterTab, 
+                                activeFilter === 'Cats' ? styles.filterTabActive : styles.filterTabInactive
+                            ]}
+                            onPress={() => handleTabPress('Cats')}
+                        >
+                            <Text style={[
+                                styles.filterText, 
+                                activeFilter === 'Cats' ? styles.filterTextActive : styles.filterTextInactive
+                            ]}>
+                                Cats
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[
+                                styles.filterTab, 
+                                activeFilter === 'Dogs' ? styles.filterTabActive : styles.filterTabInactive
+                            ]}
+                            onPress={() => handleTabPress('Dogs')}
+                        >
+                            <Text style={[
+                                styles.filterText, 
+                                activeFilter === 'Dogs' ? styles.filterTextActive : styles.filterTextInactive
+                            ]}>
+                                Dogs
+                            </Text>
                         </TouchableOpacity>
                     </View>
-                ) : filteredPets.length > 0 ? (
-                    <View style={styles.petsContainer}>
-                        {filteredPets.map((pet) => (
+
+                    {/* Loading State */}
+                    {loading && (
+                        <View style={styles.loadingContainer}>
+                            <ActivityIndicator size="large" color="#045b26" />
+                            <Text style={styles.loadingText}>Loading pets...</Text>
+                        </View>
+                    )}
+
+                    {/* Error State */}
+                    {!loading && error && (
+                        <View style={styles.emptyContainer}>
+                            <MaterialIcons 
+                                name="error-outline" 
+                                size={64} 
+                                color="#E0E0E0" 
+                                style={styles.emptyIcon} 
+                            />
+                            <Text style={styles.emptyTitle}>Error Loading Pets</Text>
+                            <Text style={styles.emptyText}>{error}</Text>
                             <TouchableOpacity 
-                                key={pet.id} 
-                                style={styles.petCard}
-                                onPress={() => handlePetPress(pet)}
+                                style={styles.addPetBtn}
+                                onPress={loadPets}
                             >
-                                <View style={styles.petImageContainer}>
-                                    {pet.photo_url ? (
-                                        <Image 
-                                            source={{ uri: pet.photo_url }} 
-                                            style={styles.petImage}
-                                            onError={() => console.log('Failed to load pet image:', pet.photo_url)}
-                                            onLoad={() => console.log('Successfully loaded pet image:', pet.photo_url)}
-                                        />
-                                    ) : (
-                                        <View style={{ width: '100%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                                            {/* Custom landscape icon with mountains and sun */}
-                                            <View style={{ width: 60, height: 40, position: 'relative' }}>
-                                                {/* Sun/Moon circle */}
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    top: 2,
-                                                    right: 8,
-                                                    width: 12,
-                                                    height: 12,
-                                                    borderRadius: 6,
-                                                    backgroundColor: '#fff',
-                                                    borderWidth: 1,
-                                                    borderColor: '#fff'
-                                                }} />
-                                                {/* Mountain peaks */}
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    left: 0,
-                                                    width: 0,
-                                                    height: 0,
-                                                    borderLeftWidth: 15,
-                                                    borderRightWidth: 15,
-                                                    borderBottomWidth: 25,
-                                                    borderLeftColor: 'transparent',
-                                                    borderRightColor: 'transparent',
-                                                    borderBottomColor: '#fff'
-                                                }} />
-                                                <View style={{
-                                                    position: 'absolute',
-                                                    bottom: 0,
-                                                    right: 0,
-                                                    width: 0,
-                                                    height: 0,
-                                                    borderLeftWidth: 12,
-                                                    borderRightWidth: 12,
-                                                    borderBottomWidth: 20,
-                                                    borderLeftColor: 'transparent',
-                                                    borderRightColor: 'transparent',
-                                                    borderBottomColor: '#fff'
-                                                }} />
-                                            </View>
-                                        </View>
+                                <Text style={styles.addPetText}>Retry</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+
+                    {/* Pets List */}
+                    {!loading && !error && (
+                        <>
+                            {filteredPets.length === 0 ? (
+                                <View style={styles.emptyContainer}>
+                                    <MaterialCommunityIcons 
+                                        name="paw-off" 
+                                        size={64} 
+                                        color="#E0E0E0" 
+                                        style={styles.emptyIcon} 
+                                    />
+                                    <Text style={styles.emptyTitle}>
+                                        {activeFilter === 'All' ? 'No Pets Found' : `No ${activeFilter} Found`}
+                                    </Text>
+                                    <Text style={styles.emptyText}>
+                                        {activeFilter === 'All' 
+                                            ? 'You haven\'t registered any pets yet.' 
+                                            : `You don't have any ${activeFilter.toLowerCase()} registered.`}
+                                    </Text>
+                                    {activeFilter === 'All' && (
+                                        <TouchableOpacity 
+                                            style={styles.addPetBtn}
+                                            onPress={() => onNavigate('Register Pet')}
+                                        >
+                                            <Text style={styles.addPetText}>Add Your First Pet</Text>
+                                        </TouchableOpacity>
                                     )}
                                 </View>
-                                <View style={styles.petInfoContainer}>
-                                    <Text style={styles.petName}>{pet.name}</Text>
-                                    <Text style={styles.petId}>ID: {pet.pet_id}</Text>
+                            ) : (
+                                <View style={styles.petsContainer}>
+                                    {filteredPets.map((pet) => (
+                                        <TouchableOpacity 
+                                            key={pet.id} 
+                                            style={styles.petCard}
+                                            onPress={() => handlePetPress(pet)}
+                                            activeOpacity={0.9}
+                                        >
+                                            <View style={styles.petImageContainer}>
+                                                {pet.photo_url ? (
+                                                    <Image 
+                                                        source={{ uri: getPhotoUrl(pet.photo_url) || '' }} 
+                                                        style={styles.petImage}
+                                                        onError={() => console.log('Failed to load pet image:', pet.photo_url, 'Full URL:', getPhotoUrl(pet.photo_url))}
+                                                        onLoad={() => console.log('Successfully loaded pet image:', pet.photo_url, 'Full URL:', getPhotoUrl(pet.photo_url))}
+                                                    />
+                                                ) : (
+                                                    <MaterialCommunityIcons 
+                                                        name="camera-off" 
+                                                        size={40} 
+                                                        color="#999" 
+                                                    />
+                                                )}
+                                            </View>
+                                            <View style={styles.petInfoContainer}>
+                                                <Text style={styles.petName}>{pet.name}</Text>
+                                                <Text style={styles.petInfo}>{pet.species} • {formatPetAge(pet.date_of_birth)}</Text>
+                                                <Text style={styles.petId}>ID: {pet.pet_id}</Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
                                 </View>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                ) : (
-                    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                        <MaterialIcons name="pets" size={64} color="#ccc" />
-                        <Text style={styles.emptyStateText}>You haven't registered any pet yet</Text>
-                        <TouchableOpacity 
-                            style={{ 
-                                backgroundColor: '#045b26', 
-                                paddingHorizontal: 20, 
-                                paddingVertical: 12, 
-                                borderRadius: 8, 
-                                marginTop: 16 
-                            }}
-                            onPress={() => onNavigate('Register Pet')}
-                        >
-                            <Text style={{ color: '#fff', fontWeight: 'bold' }}>Add Your First Pet</Text>
-                        </TouchableOpacity>
-                    </View>
-                )}
-            </ScrollView>
+                            )}
+                        </>
+                    )}
+                </ScrollView>
+            </Animated.View>
         </SafeAreaView>
     );
 }

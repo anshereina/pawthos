@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, SafeAreaView, ScrollView, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 export default function CanineIntegrationPage({ onSelect }: { onSelect: (label: string) => void }) {
@@ -14,21 +14,20 @@ export default function CanineIntegrationPage({ onSelect }: { onSelect: (label: 
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header with Back Button */}
-        <View style={styles.headerContainer}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={handleBack}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#045b26" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Dog's Pain Assessment</Text>
+
+        {/* Intro */}
+        <View style={styles.introCard}>
+          <MaterialIcons name="pets" size={22} color="#045b26" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.introTitle}>Understanding BEAAP</Text>
+            <Text style={styles.introText}>Get familiar with the categories you will assess so your observations are consistent and reliable.</Text>
+          </View>
         </View>
 
         {/* BEAAP Acronym Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.card]}>
           <Text style={styles.sectionTitle}>BEAAP Assessment Method</Text>
           <Text style={styles.sectionDescription}>
             Our assessment tool helps you communicate your observations more effectively to your veterinarian using the BEAAP method:
@@ -131,43 +130,51 @@ export default function CanineIntegrationPage({ onSelect }: { onSelect: (label: 
 
                    {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+            <TouchableOpacity style={styles.nextButton} onPress={handleNext} activeOpacity={0.9}>
               <Text style={styles.nextButtonText}>Next</Text>
               <MaterialIcons name="arrow-forward" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 24,
-    paddingHorizontal: 4,
-  },
-  backButton: {
-    padding: 10,
-    zIndex: 10,
-  },
-  headerTitle: {
-    color: '#D37F52',
-    fontSize: 25,
-    fontWeight: 'bold',
-    flex: 1,
-    textAlign: 'center',
+    backgroundColor: '#F7F9FA',
   },
   content: {
     flex: 1,
     paddingHorizontal: 24,
     paddingTop: 20,
-    paddingBottom: 20,
+    paddingBottom: 40,
+    backgroundColor: 'transparent',
+  },
+  introCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  introTitle: {
+    color: '#045b26',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  introText: {
+    color: '#4a7c59',
+    fontSize: 13,
+    lineHeight: 18,
   },
   headerText: {
     color: '#D37F52',
@@ -181,18 +188,28 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 32,
   },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
   sectionTitle: {
     color: '#045b26',
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 14,
     textAlign: 'left',
   },
   sectionDescription: {
     color: '#4a7c59',
-    fontSize: 12,
-    lineHeight: 12,
-    marginBottom: 16,
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 14,
     textAlign: 'left',
   },
   acronymContainer: {
@@ -275,18 +292,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 20,
-    marginTop: -20,
+    marginTop: -8,
   },
   nextButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#D37F52',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 24,
     elevation: 4,
-    minWidth: 180,
+    minWidth: 200,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   nextButtonText: {
     color: '#fff',

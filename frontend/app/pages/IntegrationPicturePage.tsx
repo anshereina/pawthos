@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ActivityIndicator, ScrollView, Image, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, Modal, Pressable, Alert } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -9,6 +9,7 @@ import { API_BASE_URL } from '../../utils/config';
 
 interface IntegrationPicturePageProps {
   onResult: (result: string, imageUri?: string) => void;
+  onStartScan: (imageUri: string) => void;
   onBack?: () => void;
 }
 
@@ -40,6 +41,30 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingBottom: 20,
   },
+  introCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
+  },
+  introTitle: {
+    color: '#045b26',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  introText: {
+    color: '#4a7c59',
+    fontSize: 13,
+    lineHeight: 18,
+  },
   headerText: {
     color: '#D37F52',
     fontSize: 16,
@@ -51,6 +76,16 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 32,
+  },
+  card: {
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 2,
   },
   sectionTitle: {
     color: '#045b26',
@@ -92,7 +127,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 20,
-    marginTop: -20,
+    marginTop: -8,
   },
   takePhotoButton: {
     width: 110,
@@ -127,11 +162,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#D37F52',
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     paddingHorizontal: 16,
     elevation: 4,
-    minWidth: 140,
+    minWidth: 160,
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
   },
   libraryButtonText: {
     color: '#fff',
@@ -145,6 +184,59 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
+  },
+  scanBox: {
+    width: 320,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  scanTitle: {
+    color: '#045b26',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  scanSubtitle: {
+    color: '#4a7c59',
+    fontSize: 13,
+    marginTop: 4,
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  scanProgressBar: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  scanProgressFill: {
+    height: '100%',
+    backgroundColor: '#D37F52',
+  },
+  scanSteps: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 12,
+  },
+  scanStep: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  scanStepActive: {
+    opacity: 1,
+  },
+  scanStepText: {
+    color: '#6b7f70',
+    fontSize: 12,
+    marginTop: 4,
   },
   // Error Modal Styles (matching Integration Page modal)
   errorModalOverlay: {
@@ -212,9 +304,8 @@ const donts = [
   'Don\'t upload photos of dogs or other animals - only cats are supported for this assessment.',
 ];
 
-export default function IntegrationPicturePage({ onResult, onBack }: IntegrationPicturePageProps) {
+export default function IntegrationPicturePage({ onResult, onStartScan, onBack }: IntegrationPicturePageProps) {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedPetType, setSelectedPetType] = useState<string>('');
@@ -241,28 +332,7 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
     })();
   }, []);
 
-  const saveImageResultToLocalStorage = async (painLevel: string, imageUri: string) => {
-    try {
-      const assessmentDataString = await AsyncStorage.getItem('currentAssessmentData');
-      if (!assessmentDataString) {
-        console.log('No assessment data found - this is normal for new assessments');
-        return;
-      }
-
-      const assessmentData = JSON.parse(assessmentDataString);
-      
-      // Update the assessment data with the image and prediction result
-      assessmentData.pain_level = painLevel;
-      assessmentData.image_url = imageUri;
-      assessmentData.recommendations = `AI Analysis Result: ${painLevel}. Image captured and analyzed successfully.`;
-
-      // Store the updated assessment data back to AsyncStorage
-      await AsyncStorage.setItem('currentAssessmentData', JSON.stringify(assessmentData));
-      console.log('Image result saved to local storage successfully');
-    } catch (error) {
-      console.error('Error saving image result to local storage:', error);
-    }
-  };
+  // No uploads or analysis here; scanning happens on a dedicated page
 
   const handleImageSelection = async (source: 'camera' | 'library') => {
     if (source === 'camera' && hasPermission === null) {
@@ -275,7 +345,7 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
       return;
     }
 
-    setIsLoading(true);
+    // No inline scanning; navigation to scanning screen
 
     try {
       const options = {
@@ -320,86 +390,15 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
           setErrorModalVisible(true);
           return;
         }
-
-        try {
-          // Include auth token if available
-          let headers: any = undefined;
-          try {
-            const token = await getAuthToken();
-            if (token) {
-              headers = { 'Authorization': `Bearer ${token}` };
-            }
-          } catch (e) {
-            // Ignore missing token; /predict may not require auth
-          }
-
-          const response = await fetch(`${API_BASE_URL}/predict-eld`, {
-            method: 'POST',
-            headers,
-            body: formData,
-          });
-
-          const result = await response.json();
-          console.log('Response status:', response.status);
-          console.log('Response result:', result);
-          console.log('Response headers:', response.headers);
-
-          // Navigate to the result page with the prediction and image
-          if (response.ok) {
-            // Save the image and prediction result to local storage
-            await saveImageResultToLocalStorage(result.pain_level, photo.uri);
-            
-            // Log model results if diagnostic fields are present
-            if (result && (result.model_type || result.landmarks_detected !== undefined)) {
-              console.log('ELD Model Results:');
-              console.log('- Model Type:', result.model_type || 'N/A');
-              console.log('- Landmarks Detected:', result.landmarks_detected ?? 'N/A');
-              console.log('- Expected Landmarks:', result.expected_landmarks ?? 'N/A');
-              console.log('- Features Extracted:', result.features_extracted ?? 'N/A');
-              console.log('- Confidence:', result.confidence ?? 'N/A');
-            }
-            
-            onResult(result.pain_level, photo.uri);
-          } else {
-
-            // Provide more specific error messages based on the response
-            let errorMsg = 'Unknown error occurred. Please try again.';
-
-            // Endpoint not available on backend
-            if (response.status === 404) {
-              errorMsg = 'Prediction service is not available on the server. Please ensure the /api/predict-eld endpoint is enabled.';
-            }
-
-            if (result && result.detail) {
-              const detail: string = String(result.detail);
-              if (detail.includes('No Cat Face Detected')) {
-                errorMsg = result.detail; // Use the exact message from backend
-              } else if (detail.includes('too small')) {
-                errorMsg = 'The detected cat face is too small for landmark detection. Please take a closer photo of the cat\'s face.';
-              } else if (detail.includes('too large')) {
-                errorMsg = 'The detected cat face is too large. Please take a photo with more context around the cat\'s face.';
-              } else if (detail.includes('Failed to read image')) {
-                errorMsg = 'Failed to process the image for landmark detection. Please try uploading a different photo.';
-              } else if (detail.includes('Insufficient landmarks')) {
-                errorMsg = 'The model could not detect enough landmarks (48 expected). Please ensure the cat\'s face is clearly visible and well-lit.';
-              }
-            }
-
-            setErrorMessage(errorMsg);
-            setErrorModalVisible(true);
-          }
-        } catch (error) {
-          console.error('Network or other error:', error);
-          setErrorMessage('Network error or server unavailable. Please check your connection and ensure the backend is running.');
-          setErrorModalVisible(true);
-        }
+        // Navigate to scanning page and let it handle processing
+        
+        onStartScan(photo.uri);
+        return;
       }
     } catch (error) {
       console.error('Image selection error:', error);
       setErrorMessage('Failed to select image. Please try again.');
       setErrorModalVisible(true);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -413,21 +412,19 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Header with Back Button */}
-        <View style={styles.headerContainer}>
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={onBack}
-          >
-            <MaterialIcons name="arrow-back" size={24} color="#045b26" />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Cat's Pain Assessment</Text>
+        {/* Intro */}
+        <View style={styles.introCard}>
+          <MaterialIcons name="photo-camera" size={20} color="#045b26" style={{ marginRight: 8 }} />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.introTitle}>Photo assessment</Text>
+            <Text style={styles.introText}>Follow the do's and don'ts, then capture or choose a clear cat face photo.</Text>
+          </View>
         </View>
 
 
 
         {/* Do's Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.card]}>
           <Text style={styles.sectionTitle}>Do's</Text>
           
           {/* Example Images */}
@@ -456,7 +453,7 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
         </View>
 
         {/* Don'ts Section */}
-        <View style={styles.section}>
+        <View style={[styles.section, styles.card]}>
           <Text style={styles.sectionTitle}>Don'ts</Text>
           
           {/* Example Images */}
@@ -490,6 +487,7 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
           <TouchableOpacity 
             style={styles.takePhotoButton} 
             onPress={() => handleImageSelection('camera')}
+            activeOpacity={0.9}
           >
             <View style={styles.buttonIconContainer}>
               <MaterialIcons name="camera-alt" size={24} color="#fff" />
@@ -502,6 +500,7 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
           <TouchableOpacity 
             style={styles.libraryButton} 
             onPress={() => handleImageSelection('library')}
+            activeOpacity={0.9}
           >
             <MaterialIcons name="photo-library" size={20} color="#fff" />
             <Text style={styles.libraryButtonText}>Choose cat photo from Library</Text>
@@ -509,12 +508,7 @@ export default function IntegrationPicturePage({ onResult, onBack }: Integration
         </View>
       </ScrollView>
 
-      {isLoading && (
-        <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#D37F52" />
-          <Text style={{ marginTop: 10, color: '#fff' }}>Analyzing...</Text>
-        </View>
-      )}
+      {/* No inline animation here; scanning happens in a dedicated page */}
 
       {/* Error Modal */}
       <Modal

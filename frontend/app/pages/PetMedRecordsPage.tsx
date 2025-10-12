@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, ScrollView, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert, ActivityIndicator, Dimensions } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
@@ -8,191 +8,297 @@ import MedicalVisitDetailsModal from '../modals/MedicalVisitDetailsModal';
 import { medicalRecordsAPI, MedicalRecord, MedicalVisitData } from '../../utils/medicalRecords.utils';
 import { getPetById } from '../../utils/pets.utils';
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: '#f7f7f7' 
+        backgroundColor: '#FFFFFF' 
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 12,
-        backgroundColor: 'transparent',
-        elevation: 0,
-    },
-    backButton: {
-        marginRight: -10,
-    },
-    title: { 
-        fontSize: 22, 
-        fontWeight: 'bold', 
-        color: '#000'
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
+    // Export button for section header
     exportButton: {
         backgroundColor: '#045b26',
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-        borderRadius: 6,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
+        borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
     },
     exportButtonText: {
-        color: '#fff',
-        fontSize: 10,
+        color: '#FFFFFF',
+        fontSize: 12,
         fontWeight: 'bold',
-        marginLeft: 4,
+        fontFamily: 'Jumper',
+        marginLeft: 6,
     },
     content: {
         flex: 1,
         paddingHorizontal: 24,
-        paddingTop: 0,
+        paddingTop: 20,
     },
+    // Modern Pet Info Card
     petInfoSection: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    petInfoGradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        backgroundColor: '#045b26',
+    },
+    petInfoHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
         marginBottom: 20,
-        elevation: 2,
+    },
+    petInfoIconContainer: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 16,
     },
     petInfoTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+    },
+    petInfoGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    petInfoItem: {
+        width: '48%',
+        backgroundColor: '#F8FFF8',
+        borderRadius: 12,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#E8F5E8',
+    },
+    petInfoLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#666',
+        fontFamily: 'Flink',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    petInfoValue: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'System',
+    },
+    // Modern Records Section
+    recordsSection: {
+        flex: 1,
+    },
+    recordsSectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 20,
+    },
+    recordsSectionLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    recordsSectionIconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    recordsSectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+    },
+    recordCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+        overflow: 'hidden',
+    },
+    recordCardGradient: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        backgroundColor: '#045b26',
+    },
+    recordCardContent: {
+        padding: 20,
+        paddingTop: 24,
+    },
+    recordCardHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: 16,
+    },
+    recordReason: {
         fontSize: 18,
         fontWeight: 'bold',
         color: '#045b26',
-        marginBottom: 16,
+        fontFamily: 'Jumper',
+        flex: 1,
+        marginRight: 12,
     },
-    petInfoItem: {
+    recordDetailsButton: {
+        backgroundColor: '#E8F5E8',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
     },
-    petInfoLabel: {
+    recordDetailsButtonText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Flink',
+        marginLeft: 4,
+    },
+    recordDatesContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    recordDateItem: {
+        flex: 1,
+        backgroundColor: '#F8FFF8',
+        borderRadius: 10,
+        padding: 12,
+        marginHorizontal: 4,
+        alignItems: 'center',
+    },
+    recordDateLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        color: '#666',
+        fontFamily: 'Flink',
+        marginBottom: 4,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    recordDateValue: {
         fontSize: 14,
         fontWeight: 'bold',
         color: '#045b26',
-        width: 100,
+        fontFamily: 'System',
+        textAlign: 'center',
     },
-    petInfoValue: {
+    // Empty State
+    emptyStateCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 40,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+    },
+    emptyStateIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#F8FFF8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    emptyStateTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emptyStateText: {
         fontSize: 14,
         color: '#666',
-        flex: 1,
-    },
-    tableContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        overflow: 'hidden',
-        elevation: 2,
-    },
-    tableHeader: {
-        flexDirection: 'row',
-        backgroundColor: '#e0ffe6',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-    },
-    headerCell: {
-        flex: 1,
-        fontWeight: 'bold',
-        color: '#045b26',
-        fontSize: 9,
+        fontFamily: 'Flink',
         textAlign: 'center',
-        paddingHorizontal: 4,
+        lineHeight: 20,
     },
-    lastHeaderCell: {
-        borderRightWidth: 0,
-    },
-    tableRow: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        minHeight: 50,
-    },
-    tableCell: {
-        flex: 1,
-        fontSize: 10,
-        color: '#000',
-        textAlign: 'center',
-        paddingHorizontal: 4,
-        borderRightWidth: 1,
-        borderRightColor: '#f0f0f0',
-    },
-    lastCell: {
-        borderRightWidth: 0,
-    },
-    clickableText: {
-        color: '#045b26',
-        textDecorationLine: 'underline',
-        fontWeight: '500',
-        fontSize: 10,
-        textAlign: 'center',
-    },
-    emptyRow: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-        minHeight: 50,
-    },
-    emptyCell: {
-        flex: 1,
-        height: 20,
-        backgroundColor: '#f9f9f9',
-        marginHorizontal: 2,
-        borderRadius: 4,
-        borderRightWidth: 1,
-        borderRightColor: '#f0f0f0',
-    },
-    lastEmptyCell: {
-        borderRightWidth: 0,
-    },
+    // Loading and Error States
     loadingContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
+        backgroundColor: '#FFFFFF',
     },
-    emptyStateContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-    },
-    emptyStateText: {
+    loadingText: {
+        marginTop: 16,
         fontSize: 16,
         color: '#666',
-        textAlign: 'center',
-        marginTop: 16,
+        fontFamily: 'Flink',
     },
     errorContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 24,
+        backgroundColor: '#FFFFFF',
+    },
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FFE8E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#DC3545',
+        fontFamily: 'Jumper',
+        marginBottom: 8,
+        textAlign: 'center',
     },
     errorText: {
-        fontSize: 16,
-        color: '#ff0000',
+        fontSize: 14,
+        color: '#666',
+        fontFamily: 'Flink',
         textAlign: 'center',
-        marginTop: 16,
+        marginBottom: 24,
+        lineHeight: 20,
     },
     retryButton: {
         backgroundColor: '#045b26',
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        borderRadius: 8,
-        marginTop: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 16,
     },
     retryButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 14,
         fontWeight: 'bold',
+        fontFamily: 'Jumper',
     },
 });
 
@@ -308,7 +414,7 @@ export default function PetMedRecordsPage({ onNavigate, petId }: { onNavigate: (
             const { uri } = await Print.printToFileAsync({ html });
 
             const fileName = `Medical_Records_${petName.replace(/[^a-z0-9_-]/gi, '_')}_${Date.now()}.pdf`;
-            const dest = `${FileSystem.documentDirectory}${fileName}`;
+            const dest = `${(FileSystem as any).documentDirectory || ''}${fileName}`;
             await FileSystem.moveAsync({ from: uri, to: dest });
 
             if (await Sharing.isAvailableAsync()) {
@@ -324,134 +430,128 @@ export default function PetMedRecordsPage({ onNavigate, petId }: { onNavigate: (
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <View style={styles.headerLeft}>
-                        <TouchableOpacity 
-                            style={styles.backButton}
-                            onPress={() => onNavigate('Pet profile')}
-                        >
-                            <MaterialIcons name="arrow-back" size={24} color="#666" />
-                        </TouchableOpacity>
-                        <Text style={styles.title}>Medical Records</Text>
-                    </View>
-                    <TouchableOpacity style={styles.exportButton} onPress={() => Alert.alert('Export', 'Exporting medical records...')}>
-                        <MaterialIcons name="file-download" size={18} color="#fff" />
-                        <Text style={styles.exportButtonText}>Export file</Text>
-                    </TouchableOpacity>
-                </View>
+            <View style={styles.container}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#045b26" />
-                    <Text style={{ marginTop: 16, color: '#666' }}>Loading medical records...</Text>
+                    <Text style={styles.loadingText}>Loading medical records...</Text>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     if (error) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={styles.header}>
-                    <TouchableOpacity 
-                        style={styles.backButton}
-                        onPress={() => onNavigate('Pet profile')}
-                    >
-                        <MaterialIcons name="arrow-back" size={24} color="#666" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Medical Records</Text>
-                </View>
+            <View style={styles.container}>
                 <View style={styles.errorContainer}>
-                    <MaterialIcons name="error" size={48} color="#ff0000" />
+                    <View style={styles.errorIconContainer}>
+                        <MaterialIcons name="error-outline" size={40} color="#DC3545" />
+                    </View>
+                    <Text style={styles.errorTitle}>Something went wrong</Text>
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity style={styles.retryButton} onPress={handleRetry}>
-                        <Text style={styles.retryButtonText}>Retry</Text>
+                        <Text style={styles.retryButtonText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
-            </SafeAreaView>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity 
-                        style={styles.backButton}
-                        onPress={() => onNavigate('Pet profile')}
-                    >
-                        <MaterialIcons name="arrow-back" size={24} color="#666" />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>Medical Records</Text>
-                </View>
-                <TouchableOpacity style={styles.exportButton} onPress={handleExportPdf}>
-                    <MaterialIcons name="file-download" size={14} color="#fff" />
-                    <Text style={styles.exportButtonText}>Export file</Text>
-                </TouchableOpacity>
-            </View>
-
+        <View style={styles.container}>
             <ScrollView style={styles.content}>
-                {/* Pet Information Section */}
+                {/* Modern Pet Information Section */}
                 {petInfo && (
                     <View style={styles.petInfoSection}>
-                        <Text style={styles.petInfoTitle}>Pet Information</Text>
+                        <View style={styles.petInfoGradient} />
+                        <View style={styles.petInfoHeader}>
+                            <View style={styles.petInfoIconContainer}>
+                                <MaterialCommunityIcons name="paw" size={24} color="#045b26" />
+                            </View>
+                            <Text style={styles.petInfoTitle}>Pet Information</Text>
+                        </View>
                         
-                        <View style={styles.petInfoItem}>
-                            <Text style={styles.petInfoLabel}>Name:</Text>
-                            <Text style={styles.petInfoValue}>{petInfo.name}</Text>
-                        </View>
-                        <View style={styles.petInfoItem}>
-                            <Text style={styles.petInfoLabel}>Age:</Text>
-                            <Text style={styles.petInfoValue}>
-                                {petInfo.date_of_birth ? medicalRecordsAPI.calculateAge(petInfo.date_of_birth) : 'Unknown'}
-                            </Text>
-                        </View>
-                        <View style={styles.petInfoItem}>
-                            <Text style={styles.petInfoLabel}>Date of Birth:</Text>
-                            <Text style={styles.petInfoValue}>
-                                {petInfo.date_of_birth ? medicalRecordsAPI.formatDate(petInfo.date_of_birth) : 'Unknown'}
-                            </Text>
-                        </View>
-                        <View style={styles.petInfoItem}>
-                            <Text style={styles.petInfoLabel}>Gender:</Text>
-                            <Text style={styles.petInfoValue}>{petInfo.gender || 'Unknown'}</Text>
+                        <View style={styles.petInfoGrid}>
+                            <View style={styles.petInfoItem}>
+                                <Text style={styles.petInfoLabel}>Name</Text>
+                                <Text style={styles.petInfoValue}>{petInfo.name}</Text>
+                            </View>
+                            <View style={styles.petInfoItem}>
+                                <Text style={styles.petInfoLabel}>Age</Text>
+                                <Text style={styles.petInfoValue}>
+                                    {petInfo.date_of_birth ? medicalRecordsAPI.calculateAge(petInfo.date_of_birth) : 'Unknown'}
+                                </Text>
+                            </View>
+                            <View style={styles.petInfoItem}>
+                                <Text style={styles.petInfoLabel}>Birth Date</Text>
+                                <Text style={styles.petInfoValue}>
+                                    {petInfo.date_of_birth ? medicalRecordsAPI.formatDate(petInfo.date_of_birth) : 'Unknown'}
+                                </Text>
+                            </View>
+                            <View style={styles.petInfoItem}>
+                                <Text style={styles.petInfoLabel}>Gender</Text>
+                                <Text style={styles.petInfoValue}>{petInfo.gender || 'Unknown'}</Text>
+                            </View>
                         </View>
                     </View>
                 )}
 
-                {/* Medical Records Table */}
-                <View style={styles.tableContainer}>                    
-                    {/* Table Header */}
-                    <View style={styles.tableHeader}>
-                        <Text style={styles.headerCell}>Reason for Visit</Text>
-                        <Text style={styles.headerCell}>Date Visited</Text>
-                        <Text style={styles.headerCell}>Date of Next Visit</Text>
-                        <Text style={[styles.headerCell, styles.lastHeaderCell]}>Procedures / Details</Text>
+                {/* Modern Medical Records Section */}
+                <View style={styles.recordsSection}>
+                    <View style={styles.recordsSectionHeader}>
+                        <View style={styles.recordsSectionLeft}>
+                            <View style={styles.recordsSectionIconContainer}>
+                                <MaterialCommunityIcons name="file-document-outline" size={20} color="#045b26" />
+                            </View>
+                            <Text style={styles.recordsSectionTitle}>Medical Records</Text>
+                        </View>
+                        <TouchableOpacity style={styles.exportButton} onPress={handleExportPdf}>
+                            <MaterialIcons name="file-download" size={14} color="#FFFFFF" />
+                            <Text style={styles.exportButtonText}>Export</Text>
+                        </TouchableOpacity>
                     </View>
 
-                    {/* Medical Records */}
+                    {/* Medical Records Cards */}
                     {medicalRecords.length > 0 ? (
                         medicalRecords.map((record) => (
-                            <View key={record.id} style={styles.tableRow}>
-                                <Text style={styles.tableCell}>{record.reason_for_visit}</Text>
-                                <Text style={styles.tableCell}>
-                                    {medicalRecordsAPI.formatDate(record.date_visited)}
-                                </Text>
-                                <Text style={styles.tableCell}>
-                                    {record.date_of_next_visit ? medicalRecordsAPI.formatDate(record.date_of_next_visit) : 'N/A'}
-                                </Text>
-                                <View style={[styles.tableCell, styles.lastCell]}>
-                                    <TouchableOpacity onPress={() => handleRecordPress(record)}>
-                                        <Text style={styles.clickableText}>See Details</Text>
-                                    </TouchableOpacity>
+                            <View key={record.id} style={styles.recordCard}>
+                                <View style={styles.recordCardGradient} />
+                                <View style={styles.recordCardContent}>
+                                    <View style={styles.recordCardHeader}>
+                                        <Text style={styles.recordReason}>{record.reason_for_visit}</Text>
+                                        <TouchableOpacity 
+                                            style={styles.recordDetailsButton}
+                                            onPress={() => handleRecordPress(record)}
+                                        >
+                                            <MaterialCommunityIcons name="eye" size={16} color="#045b26" />
+                                            <Text style={styles.recordDetailsButtonText}>Details</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                    
+                                    <View style={styles.recordDatesContainer}>
+                                        <View style={styles.recordDateItem}>
+                                            <Text style={styles.recordDateLabel}>Visited</Text>
+                                            <Text style={styles.recordDateValue}>
+                                                {medicalRecordsAPI.formatDate(record.date_visited)}
+                                            </Text>
+                                        </View>
+                                        <View style={styles.recordDateItem}>
+                                            <Text style={styles.recordDateLabel}>Next Visit</Text>
+                                            <Text style={styles.recordDateValue}>
+                                                {record.date_of_next_visit ? medicalRecordsAPI.formatDate(record.date_of_next_visit) : 'N/A'}
+                                            </Text>
+                                        </View>
+                                    </View>
                                 </View>
                             </View>
                         ))
                     ) : (
-                        <View style={styles.emptyStateContainer}>
-                            <MaterialIcons name="medical-services" size={48} color="#ccc" />
+                        <View style={styles.emptyStateCard}>
+                            <View style={styles.emptyStateIconContainer}>
+                                <MaterialCommunityIcons name="file-document-outline" size={40} color="#045b26" />
+                            </View>
+                            <Text style={styles.emptyStateTitle}>No Records Found</Text>
                             <Text style={styles.emptyStateText}>
-                                No medical records found for this pet.
+                                No medical records found for this pet. Records will appear here once visits are logged.
                             </Text>
                         </View>
                     )}
@@ -469,6 +569,6 @@ export default function PetMedRecordsPage({ onNavigate, petId }: { onNavigate: (
                     medicalVisitData={medicalRecordsAPI.convertToMedicalVisitData(selectedRecord, petInfo)}
                 />
             )}
-        </SafeAreaView>
+        </View>
     );
 } 

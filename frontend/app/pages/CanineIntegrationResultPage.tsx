@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createPainAssessment } from '../../utils/painAssessments.utils';
@@ -7,7 +7,7 @@ import { createPainAssessment } from '../../utils/painAssessments.utils';
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa', // Light white background
+        backgroundColor: '#ffffff', // White background
         justifyContent: 'flex-start',
         alignItems: 'center',
         paddingHorizontal: 24,
@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ffffff',
         borderRadius: 20,
         padding: 32,
-        paddingTop: 52, 
+        paddingTop: 45, 
         width: '90%',
         alignItems: 'center',
         marginBottom: 32,
@@ -72,14 +72,14 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     recommendationsTitle: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: '#333',
-        marginBottom: 12,
+        marginBottom: 5,
         textAlign: 'center',
     },
     recommendationsText: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#666',
         textAlign: 'center',
         lineHeight: 22,
@@ -150,18 +150,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 20,
         lineHeight: 16,
     },
-    // Header and Back Button Styles
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        width: '100%',
-    },
-    backButton: {
-        padding: 14,
-        zIndex: 10,
-    },
 });
 
 interface CanineIntegrationResultPageProps {
@@ -186,7 +174,7 @@ export default function CanineIntegrationResultPage({
     selectedAnswers = []
 }: CanineIntegrationResultPageProps) {
     
-    // Calculate pain level based on BEAAP assessment
+    // Calculate pain level based on BEAAP assessment (6-level BEAP mapping)
     const calculatePainLevel = (answers: number[]) => {
         if (answers.length === 0) {
             return 'Unknown';
@@ -207,19 +195,27 @@ export default function CanineIntegrationResultPage({
                 return sum;
             }, 0);
             
-            // Map total score to pain levels (0-40 scale)
-            if (totalScore <= 8) {
+            // Map total score to 6 pain levels (0-40 scale → BEAP)
+            // 0–3: Level 0 (No Pain)
+            // 4–12: Level 1 (Mild Pain)
+            // 13–20: Level 2 (Moderate Pain)
+            // 21–28: Level 3 (Moderate to Severe Pain)
+            // 29–36: Level 4 (Severe Pain)
+            // 37–40: Level 5 (Worst Pain Possible)
+            if (totalScore <= 3) {
                 return 'Level 0 (No Pain)';
-            } else if (totalScore <= 16) {
+            } else if (totalScore <= 12) {
                 return 'Level 1 (Mild Pain)';
-            } else if (totalScore <= 24) {
+            } else if (totalScore <= 20) {
                 return 'Level 2 (Moderate Pain)';
-            } else if (totalScore <= 32) {
+            } else if (totalScore <= 28) {
                 return 'Level 3 (Moderate to Severe Pain)';
-            } else if (totalScore <= 40) {
+            } else if (totalScore <= 36) {
                 return 'Level 4 (Severe Pain)';
+            } else if (totalScore <= 40) {
+                return 'Level 5 (Worst Pain Possible)';
             } else {
-                return 'Level 4 (Severe Pain)'; // Cap at severe pain
+                return 'Level 5 (Worst Pain Possible)'; // Cap at worst pain
             }
         }
         
@@ -236,17 +232,19 @@ export default function CanineIntegrationResultPage({
         });
         
         const averageScore = painScores.reduce((sum, score) => sum + score, 0) / painScores.length;
-        
-        if (averageScore <= 1) {
+        // Map 0–10 average to 6 levels using midpoints between anchors
+        if (averageScore <= 0.75) {
             return 'Level 0 (No Pain)';
-        } else if (averageScore <= 3) {
+        } else if (averageScore <= 2.5) {
             return 'Level 1 (Mild Pain)';
-        } else if (averageScore <= 5) {
+        } else if (averageScore <= 4.5) {
             return 'Level 2 (Moderate Pain)';
-        } else if (averageScore <= 7) {
+        } else if (averageScore <= 6.5) {
             return 'Level 3 (Moderate to Severe Pain)';
-        } else {
+        } else if (averageScore <= 8.5) {
             return 'Level 4 (Severe Pain)';
+        } else {
+            return 'Level 5 (Worst Pain Possible)';
         }
     };
 
@@ -265,6 +263,8 @@ export default function CanineIntegrationResultPage({
             return 'Your dog is experiencing moderate to severe pain. Please schedule a veterinary appointment as soon as possible to address the pain and underlying health issues.';
         } else if (level === 'Level 4 (Severe Pain)' || level === 'Level 4' || level === 'Severe Pain') {
             return 'Your dog is experiencing severe pain. Immediate veterinary attention is strongly recommended to ensure your dog\'s comfort and address any serious health concerns.';
+        } else if (level === 'Level 5 (Worst Pain Possible)' || level === 'Level 5' || level === 'Worst Pain Possible') {
+            return 'Your dog may be in the worst pain possible. Seek emergency veterinary care immediately.';
         } else if (level === 'Not recognize' || level === 'Not Recognized' || level === 'Unknown') {
             return 'The assessment could not be properly completed. Please ensure you have answered all BEAAP categories and try the assessment again following the guidelines.';
         }
@@ -283,6 +283,8 @@ export default function CanineIntegrationResultPage({
             return require('../../assets/images/ModeratePain.png'); // Moderate to severe pain image
         } else if (level === 'Level 4 (Severe Pain)' || level === 'Level 4' || level === 'Severe Pain') {
             return require('../../assets/images/ModeratePain.png'); // Severe pain image
+        } else if (level === 'Level 5 (Worst Pain Possible)' || level === 'Level 5' || level === 'Worst Pain Possible') {
+            return require('../../assets/images/ModeratePain.png'); // Worst pain possible - reuse severe image
         } else if (level === 'Not recognize' || level === 'Not Recognized' || level === 'Unknown') {
             return require('../../assets/images/NoPain.png'); // Default to no pain image for unknown
         }
@@ -389,16 +391,7 @@ export default function CanineIntegrationResultPage({
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            {/* Back Arrow Header */}
-            <View style={styles.headerContainer}>
-                <TouchableOpacity 
-                    style={styles.backButton} 
-                    onPress={handleHome}
-                >
-                    <MaterialIcons name="arrow-back" size={30} color="#045b26" />
-                </TouchableOpacity>
-            </View>
+        <View style={styles.container}>
             
             <View style={styles.content}>
                 {/* Circular Image */}
@@ -451,22 +444,7 @@ export default function CanineIntegrationResultPage({
 
                 {/* Call-to-Action Buttons */}
                 <View style={styles.buttonContainer}>
-                    {petRegistered === 'no' ? (
-                        <>
-                            <TouchableOpacity
-                                style={styles.secondOpinionButton}
-                                onPress={onSecondOpinion}
-                            >
-                                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.secondOpinionButtonText}>Take another assessment</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.secondOpinionButton, { backgroundColor: '#045b26' }]}
-                                onPress={onHome}
-                            >
-                                <Text style={styles.secondOpinionButtonText}>Go to Home</Text>
-                            </TouchableOpacity>
-                        </>
-                    ) : (
+                    {petRegistered === 'yes' ? (
                         <>
                             <View style={styles.saveQuestionContainer}>
                                 <Text style={styles.saveQuestionText}>Save Assessment?</Text>
@@ -515,9 +493,24 @@ export default function CanineIntegrationResultPage({
                                 </>
                             )}
                         </>
+                    ) : (
+                        <>
+                            <TouchableOpacity
+                                style={styles.secondOpinionButton}
+                                onPress={onSecondOpinion}
+                            >
+                                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.secondOpinionButtonText}>Take another assessment</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.secondOpinionButton, { backgroundColor: '#045b26' }]}
+                                onPress={onHome}
+                            >
+                                <Text style={styles.secondOpinionButtonText}>Go to Home</Text>
+                            </TouchableOpacity>
+                        </>
                     )}
                 </View>
             </View>
-        </SafeAreaView>
+        </View>
     );
 }

@@ -1,166 +1,177 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, Image, Alert, ActivityIndicator, ScrollView } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createPainAssessment, createPainAssessmentWithImage } from '../../utils/painAssessments.utils';
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa', // Light white background
-        justifyContent: 'flex-start',
-        alignItems: 'center',
-        paddingHorizontal: 24,
-        paddingTop: 12,
+        backgroundColor: '#F8FAFE',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+        paddingBottom: 40,
     },
     content: {
-        width: '100%',
-        maxWidth: 400, // Limit maximum width for better centering
+        paddingHorizontal: 24,
+        paddingTop: 40,
         alignItems: 'center',
-        justifyContent: 'flex-start',
-        paddingVertical: 16,
     },
-    // Circular Icon Container
-    iconContainer: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: '#fff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: -20, // Creates overlap with the results card
-        elevation: 12,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.4,
-        shadowRadius: 12,
-        zIndex: 10, // Ensures it appears above the results card
-    },
-    // Results Card
-    resultsCard: {
-        backgroundColor: '#ffffff',
-        borderRadius: 20,
-        padding: 32,
-        paddingTop: 52, 
-        width: '90%',
+    
+    // Header Section
+    headerSection: {
         alignItems: 'center',
         marginBottom: 32,
-        elevation: 10,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.2,
-        shadowRadius: 12,
     },
-    resultTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#333',
+    successIcon: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#4CAF50',
+        alignItems: 'center',
+        justifyContent: 'center',
         marginBottom: 16,
-        textAlign: 'center',
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOpacity: 0.15,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 6 },
     },
-    resultText: {
+    headerTitle: {
         fontSize: 24,
         fontWeight: 'bold',
-        color: '#d37f52', // Terracotta color for result
-        marginBottom: 20,
+        color: '#1A1A1A',
+        marginBottom: 8,
         textAlign: 'center',
     },
-    divider: {
+    headerSubtitle: {
+        fontSize: 16,
+        color: 'rgba(26, 26, 26, 0.7)',
+        textAlign: 'center',
+    },
+    
+    // Results Card
+    resultsCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
         width: '100%',
-        height: 1,
-        backgroundColor: '#e0e0e0',
-        marginBottom: 20,
+        marginBottom: 24,
+        elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    resultsCardGradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        backgroundColor: '#4CAF50',
+    },
+    painLevelSection: {
+        alignItems: 'center',
+        marginBottom: 24,
+    },
+    painLevelLabel: {
+        fontSize: 16,
+        color: 'rgba(26, 26, 26, 0.7)',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    painLevelValue: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#2196F3',
+        textAlign: 'center',
+        marginBottom: 16,
+    },
+    recommendationsSection: {
+        width: '100%',
     },
     recommendationsTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#1A1A1A',
         marginBottom: 12,
         textAlign: 'center',
     },
     recommendationsText: {
         fontSize: 14,
-        color: '#666',
+        color: 'rgba(26, 26, 26, 0.8)',
         textAlign: 'center',
         lineHeight: 22,
     },
-    // Button Container
-    buttonContainer: {
+    // Action Buttons
+    actionButtonsContainer: {
         width: '100%',
-        alignItems: 'center',
-        gap: 20,
-        marginTop: 'auto',
-        paddingBottom: 20,
+        marginBottom: 24,
     },
-    // Save Question Container
-    saveQuestionContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 16,
-        gap: 12,
-    },
-    // Save Question Text
-    saveQuestionText: {
-        color: '#045b26',
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-    },
-    // Yes/No Text Buttons
-    yesNoTextButton: {
-        color: '#D37F52',
-        fontSize: 18,
-        fontWeight: 'bold',
-        textDecorationLine: 'underline',
-    },
-    yesNoTextButtonDisabled: {
-        color: '#ccc',
-    },
-
-    // Second Opinion Button
-    secondOpinionButton: {
-        backgroundColor: '#D37F52', // Terracotta orange
-        borderRadius: 12,
-        paddingVertical: 12,
+    primaryButton: {
+        backgroundColor: '#2196F3',
+        borderRadius: 16,
+        paddingVertical: 16,
         paddingHorizontal: 24,
-        alignItems: 'center',
-        width: '100%',
-        maxWidth: 360,
-        elevation: 2,
+        marginBottom: 12,
+        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        marginBottom: 8,
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 4 },
     },
-    secondOpinionButtonText: {
-        color: '#fff',
+    primaryButtonText: {
+        color: '#FFFFFF',
         fontSize: 16,
         fontWeight: 'bold',
-        letterSpacing: 0.5,
-    },
-    // Note Text
-    noteText: {
-        color: '#666',
-        fontSize: 12,
         textAlign: 'center',
-        fontStyle: 'italic',
-        marginBottom: 16,
-        paddingHorizontal: 20,
-        lineHeight: 16,
     },
-    // Header and Back Button Styles
-    headerContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+    secondaryButton: {
+        backgroundColor: '#F3F4F6',
+        borderRadius: 16,
+        paddingVertical: 16,
+        paddingHorizontal: 24,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+        marginBottom: 12,
+    },
+    secondaryButtonText: {
+        color: '#6B7280',
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+    },
+    
+    // Disclaimer
+    disclaimerCard: {
+        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 193, 7, 0.3)',
         width: '100%',
+        marginBottom: 24,
     },
-    backButton: {
-        padding: 14,
-        zIndex: 10,
+    disclaimerTitle: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#F57C00',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    disclaimerText: {
+        fontSize: 12,
+        color: 'rgba(26, 26, 26, 0.7)',
+        textAlign: 'center',
+        lineHeight: 16,
     },
 });
 
@@ -169,6 +180,7 @@ interface IntegrationResultPageProps {
     onHome?: () => void;
     onSecondOpinionAppointment?: () => void;
     onSave?: () => void;
+    onTakeAnotherPicture?: () => void;
     petType?: string;
     severityLevel?: string;
     painLevel?: string;
@@ -179,6 +191,7 @@ export default function IntegrationResultPage({
     onHome, 
     onSecondOpinionAppointment,
     onSave,
+    onTakeAnotherPicture,
     petType = 'cat', 
     severityLevel = 'Unknown',
     painLevel 
@@ -187,22 +200,26 @@ export default function IntegrationResultPage({
     // Use painLevel if provided, otherwise fall back to severityLevel
     const currentPainLevel = painLevel || severityLevel;
 
-    // Normalize various backend/result strings to a consistent set
+    // Normalize various backend/result strings to a consistent 6-level BEAP set
     const normalizePainLevel = (level: string): string => {
         if (!level) return 'Unknown';
         const normalized = String(level).trim();
         // Prefer numeric level if present
         if (/^level\s*0/i.test(normalized)) return 'Level 0 (No Pain)';
         if (/^level\s*1/i.test(normalized)) return 'Level 1 (Mild Pain)';
-        if (/^level\s*2/i.test(normalized)) return 'Level 2 (Moderate/Severe Pain)';
-        if (/^level\s*3/i.test(normalized)) return 'Level 2 (Moderate/Severe Pain)';
-        if (/^level\s*4/i.test(normalized)) return 'Level 2 (Moderate/Severe Pain)';
+        if (/^level\s*2/i.test(normalized)) return 'Level 2 (Moderate Pain)';
+        if (/^level\s*3/i.test(normalized)) return 'Level 3 (Moderate to Severe Pain)';
+        if (/^level\s*4/i.test(normalized)) return 'Level 4 (Severe Pain)';
+        if (/^level\s*5/i.test(normalized)) return 'Level 5 (Worst Pain Possible)';
 
         // Handle plain labels
         const lower = normalized.toLowerCase();
         if (lower.includes('no pain')) return 'Level 0 (No Pain)';
         if (lower.includes('mild')) return 'Level 1 (Mild Pain)';
-        if (lower.includes('moderate') || lower.includes('severe')) return 'Level 2 (Moderate/Severe Pain)';
+        if (lower.includes('moderate to severe')) return 'Level 3 (Moderate to Severe Pain)';
+        if (lower.includes('moderate')) return 'Level 2 (Moderate Pain)';
+        if (lower.includes('worst')) return 'Level 5 (Worst Pain Possible)';
+        if (lower.includes('severe')) return 'Level 4 (Severe Pain)';
         if (lower.includes('unknown') || lower.includes('not recognize') || lower.includes('not recognized')) return 'Unknown';
         return 'Unknown';
     };
@@ -237,8 +254,14 @@ export default function IntegrationResultPage({
             return `Your ${petName} appears to be in good health. Continue to monitor ${petPronoun} behavior and well-being.`;
         } else if (level === 'Level 1 (Mild Pain)' || level === 'Level 1' || level === 'Mild Pain') {
             return `Your ${petName} may be experiencing mild pain. Monitor closely for changes in behavior or appetite. Consider consulting with a veterinarian if symptoms persist.`;
-        } else if (level === 'Level 2 (Moderate/Severe Pain)' || level === 'Level 2' || level === 'Moderate Pain' || level === 'Severe Pain') {
-            return `Your ${petName} is likely experiencing moderate to severe pain. It is highly recommended to seek immediate veterinary attention to ensure your pet's comfort and health.`;
+        } else if (level === 'Level 2 (Moderate Pain)' || level === 'Level 2' || level === 'Moderate Pain') {
+            return `Your ${petName} is experiencing moderate pain. Please schedule a veterinary appointment soon to address the underlying cause and ensure your pet's comfort.`;
+        } else if (level === 'Level 3 (Moderate to Severe Pain)' || level === 'Level 3' || level === 'Moderate to Severe Pain') {
+            return `Your ${petName} is experiencing moderate to severe pain. Seek prompt veterinary attention to manage pain and evaluate potential causes.`;
+        } else if (level === 'Level 4 (Severe Pain)' || level === 'Level 4' || level === 'Severe Pain') {
+            return `Your ${petName} is experiencing severe pain. Immediate veterinary attention is strongly recommended to ensure comfort and address serious concerns.`;
+        } else if (level === 'Level 5 (Worst Pain Possible)' || level === 'Level 5' || level === 'Worst Pain Possible') {
+            return `Your ${petName} may be in the worst pain possible. Seek emergency veterinary care immediately.`;
         } else if (level === 'Not recognize' || level === 'Not Recognized' || level === 'Unknown') {
             return `The image could not be properly analyzed. Please ensure your ${petName}'s face is clearly visible and well-lit. Try taking another photo following the guidelines above.`;
         }
@@ -251,8 +274,14 @@ export default function IntegrationResultPage({
             return require('../../assets/images/NoPain.png'); // No pain image
         } else if (level === 'Level 1 (Mild Pain)' || level === 'Level 1' || level === 'Mild Pain') {
             return require('../../assets/images/MildPain.png'); // Mild pain image
-        } else if (level === 'Level 2 (Moderate/Severe Pain)' || level === 'Level 2' || level === 'Moderate Pain' || level === 'Severe Pain') {
+        } else if (level === 'Level 2 (Moderate Pain)' || level === 'Level 2' || level === 'Moderate Pain') {
             return require('../../assets/images/ModeratePain.png'); // Moderate pain image
+        } else if (level === 'Level 3 (Moderate to Severe Pain)' || level === 'Level 3' || level === 'Moderate to Severe Pain') {
+            return require('../../assets/images/ModeratePain.png'); // Reuse moderate image
+        } else if (level === 'Level 4 (Severe Pain)' || level === 'Level 4' || level === 'Severe Pain') {
+            return require('../../assets/images/ModeratePain.png'); // Reuse moderate image
+        } else if (level === 'Level 5 (Worst Pain Possible)' || level === 'Level 5' || level === 'Worst Pain Possible') {
+            return require('../../assets/images/ModeratePain.png'); // Reuse moderate image
         } else if (level === 'Not recognize' || level === 'Not Recognized' || level === 'Unknown') {
             return require('../../assets/images/NoPain.png'); // Default to no pain image for unknown
         }
@@ -304,13 +333,17 @@ export default function IntegrationResultPage({
                     assessmentData.recommendations = recommendations;
                     assessmentData.pain_level = currentPainLevel;
                     
-                    // If image_url is a local file path, upload via multipart endpoint first
+                    // Check if image_url is already a server URL or local file path
                     let result;
                     const imageUrlString = String(assessmentData?.image_url || '');
                     if (imageUrlString.startsWith('file://')) {
+                        // Local file path - upload via multipart endpoint
                         result = await createPainAssessmentWithImage(assessmentData, imageUrlString);
+                    } else if (imageUrlString.startsWith('/uploads/')) {
+                        // Already a server URL - create via JSON
+                        result = await createPainAssessment(assessmentData);
                     } else {
-                        // No local image or already a server URL; create via JSON
+                        // No image or unknown format - create via JSON
                         result = await createPainAssessment(assessmentData);
                     }
 
@@ -371,113 +404,89 @@ export default function IntegrationResultPage({
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Back Arrow Header */}
-            <View style={styles.headerContainer}>
-                <TouchableOpacity 
-                    style={styles.backButton} 
-                    onPress={handleHome}
-                >
-                    <MaterialIcons name="arrow-back" size={30} color="#045b26" />
-                </TouchableOpacity>
-            </View>
-            
-            <View style={styles.content}>
-                {/* Circular Image */}
-                <View style={styles.iconContainer}>
-                    <Image
-                        source={resultImageSource}
-                        style={{ width: 60, height: 60, resizeMode: 'contain' }}
-                    />
-                </View>
+            <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                <View style={styles.content}>
+                    {/* Header Section */}
+                    <View style={styles.headerSection}>
+                        <View style={styles.successIcon}>
+                            <MaterialIcons name="check" size={40} color="#FFFFFF" />
+                        </View>
+                        <Text style={styles.headerTitle}>Assessment Complete</Text>
+                        <Text style={styles.headerSubtitle}>AI analysis finished successfully</Text>
+                    </View>
 
-                {/* Results Card */}
-                <View style={styles.resultsCard}>
-                    <Text style={styles.resultTitle}>
-                        Your {displayPetType}'s pain level is:
-                    </Text>
-                    <Text style={styles.resultText}>
-                        {normalizedPainLevel}
-                    </Text>
-                    
-                    <View style={styles.divider} />
-                    
-                    <Text style={styles.recommendationsTitle}>
-                        Recommendations
-                    </Text>
-                    <Text style={styles.recommendationsText}>
-                        {recommendations}
-                    </Text>
-                </View>
+                    {/* Results Card */}
+                    <View style={styles.resultsCard}>
+                        <View style={styles.painLevelSection}>
+                            <Text style={styles.painLevelLabel}>Your {displayPetType}'s assessed pain level:</Text>
+                            <Text style={styles.painLevelValue}>{normalizedPainLevel}</Text>
+                        </View>
+                        
+                        <View style={styles.recommendationsSection}>
+                            <Text style={styles.recommendationsTitle}>Recommendations</Text>
+                            <Text style={styles.recommendationsText}>{recommendations}</Text>
+                        </View>
+                        
+                        <View style={styles.resultsCardGradient} />
+                    </View>
 
-                {/* Call-to-Action Buttons */}
-                <View style={styles.buttonContainer}>
-                    {petRegistered === 'no' ? (
-                        <>
-                            <TouchableOpacity
-                                style={styles.secondOpinionButton}
-                                onPress={onSecondOpinion}
+                    {/* Disclaimer */}
+                    <View style={styles.disclaimerCard}>
+                        <Text style={styles.disclaimerTitle}>⚠️ Medical Disclaimer</Text>
+                        <Text style={styles.disclaimerText}>
+                            This AI assessment is for informational purposes only and should not replace professional veterinary consultation. 
+                            Always consult with a qualified veterinarian for accurate diagnosis and treatment recommendations.
+                        </Text>
+                    </View>
+
+                    {/* Action Buttons */}
+                    <View style={styles.actionButtonsContainer}>
+                        <TouchableOpacity 
+                            style={styles.primaryButton} 
+                            onPress={onTakeAnotherPicture || (() => onHome?.())}
+                            activeOpacity={0.9}
+                        >
+                            <Text style={styles.primaryButtonText}>Take Another Picture</Text>
+                        </TouchableOpacity>
+                        
+                        {petRegistered === 'yes' && !isSaved && (
+                            <TouchableOpacity 
+                                style={styles.secondaryButton} 
+                                onPress={() => handleSaveChoice('yes')}
+                                disabled={isSaving}
+                                activeOpacity={0.9}
                             >
-                                <Text numberOfLines={1} ellipsizeMode="tail" style={styles.secondOpinionButtonText}>Take another assessment</Text>
+                                {isSaving ? (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                                        <ActivityIndicator size="small" color="#6B7280" style={{ marginRight: 8 }} />
+                                        <Text style={styles.secondaryButtonText}>Saving Assessment...</Text>
+                                    </View>
+                                ) : (
+                                    <Text style={styles.secondaryButtonText}>Save Assessment</Text>
+                                )}
                             </TouchableOpacity>
-                            <TouchableOpacity
-                                style={[styles.secondOpinionButton, { backgroundColor: '#045b26' }]}
-                                onPress={onHome}
+                        )}
+                        
+                        {(petRegistered === 'yes' && isSaved) || petRegistered !== 'yes' ? (
+                            <TouchableOpacity 
+                                style={styles.secondaryButton} 
+                                onPress={onSecondOpinionAppointment || onSecondOpinion}
+                                activeOpacity={0.9}
                             >
-                                <Text style={styles.secondOpinionButtonText}>Go to Home</Text>
+                                <Text style={styles.secondaryButtonText}>Get Second Opinion</Text>
                             </TouchableOpacity>
-                        </>
-                    ) : (
-                        <>
-                            <View style={styles.saveQuestionContainer}>
-                                <Text style={styles.saveQuestionText}>Save Assessment?</Text>
-                                
-                                <TouchableOpacity
-                                    onPress={() => handleSaveChoice('yes')}
-                                    disabled={saveChoice === 'yes' || isSaving}
-                                >
-                                    {isSaving ? (
-                                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                            <ActivityIndicator size="small" color="#D37F52" style={{ marginRight: 4 }} />
-                                            <Text style={[styles.yesNoTextButton, styles.yesNoTextButtonDisabled]}>Saving...</Text>
-                                        </View>
-                                    ) : (
-                                        <Text style={[
-                                            styles.yesNoTextButton,
-                                            (saveChoice === 'yes' || isSaving) && styles.yesNoTextButtonDisabled
-                                        ]}>Yes</Text>
-                                    )}
-                                </TouchableOpacity>
-                                
-                                <TouchableOpacity
-                                    onPress={() => (saveChoice === 'yes' ? undefined : handleSaveChoice('no'))}
-                                    disabled={saveChoice !== null || isSaving}
-                                >
-                                    <Text style={[
-                                        styles.yesNoTextButton,
-                                        (saveChoice !== null || isSaving) && styles.yesNoTextButtonDisabled
-                                    ]}>No</Text>
-                                </TouchableOpacity>
-                            </View>
-                            
-                            {/* Show Second Opinion button only when user clicks "Yes" */}
-                            {saveChoice === 'yes' && (
-                                <>
-                                    <TouchableOpacity
-                                        style={styles.secondOpinionButton}
-                                        onPress={onSecondOpinionAppointment}
-                                    >
-                                        <Text style={styles.secondOpinionButtonText}>Second Opinion</Text>
-                                    </TouchableOpacity>
-                                    
-                                    <Text style={styles.noteText}>
-                                        Note: You'll need to schedule your pet to clinic appointment once you have a second opinion.
-                                    </Text>
-                                </>
-                            )}
-                        </>
-                    )}
+                        ) : null}
+                        
+                        <TouchableOpacity 
+                            style={styles.secondaryButton} 
+                            onPress={handleHome}
+                            activeOpacity={0.9}
+                        >
+                            <Text style={styles.secondaryButtonText}>Back to Home</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
-            </View>
+            </ScrollView>
         </SafeAreaView>
     );
 } 

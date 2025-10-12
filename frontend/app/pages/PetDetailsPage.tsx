@@ -1,173 +1,245 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, ActivityIndicator, Alert } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Alert, Dimensions } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { getPetById, updatePet, PetData } from '../../utils/pets.utils';
 import { isAuthenticated } from '../../utils/auth.utils';
 import EditPetProfileModal from '../modals/EditPetProfileModal';
 
+const { width, height } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
     container: { 
         flex: 1, 
-        backgroundColor: 'transparent',
-        },
-    header: {
-        position: 'absolute',
-        top: 50,
-        left: 20,
-        zIndex: 10,
-        backgroundColor: 'transparent',
+        backgroundColor: '#FFFFFF',
     },
     backButton: {
-        padding: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        position: 'absolute',
+        top: 50, // Adjusted for full-screen - moved higher
+        left: 20,
+        zIndex: 10,
+        width: 40,
+        height: 40,
         borderRadius: 20,
-    },
-    content: {
-        flex: 1,
-    },
-    petImageContainer: {
-        height: 500,
-        backgroundColor: '#e0ffe6',
-        justifyContent: 'center',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
         alignItems: 'center',
+        justifyContent: 'center',
+    },
+    editButton: {
+        position: 'absolute',
+        top: 50, // Adjusted for full-screen - moved higher
+        right: 20,
+        zIndex: 10,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    // Hero Image Section
+    heroSection: {
+        height: height * 0.65, // Increased for better full-screen experience
         position: 'relative',
-        marginTop: -50,
+        overflow: 'hidden',
     },
     petImage: {
         width: '100%',
         height: '100%',
         resizeMode: 'cover',
     },
-    imagePlaceholder: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        backgroundColor: '#ccc',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    mainInfoSection: {
-        backgroundColor: '#A1D998',
-        borderTopLeftRadius: 40,
-        borderTopRightRadius: 40,
+    heroGradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 150,
+        justifyContent: 'flex-end',
         paddingHorizontal: 24,
-        paddingTop: 15,
-        paddingBottom: 10,
-        marginTop: -50,
+        paddingBottom: 30,
     },
     petName: {
-        fontSize: 36,
+        fontSize: 32,
         fontWeight: 'bold',
-        color: '#045b26',
-        marginBottom: 8,
-        textShadowColor: '#fff',
-        textShadowOffset: { width: 1, height: 1 },
-        textShadowRadius: 2,
+        color: '#FFFFFF',
+        fontFamily: 'Jumper',
+        marginBottom: 4,
+        textShadowColor: 'rgba(0, 0, 0, 0.3)',
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
     },
     petId: {
         fontSize: 14,
-        color: '#000',
-        marginBottom: 8,
-        fontWeight: 'normal',
+        color: 'rgba(255, 255, 255, 0.9)',
+        fontFamily: 'System', // Use system font for numbers
     },
-    petNameIdSection: {
-        position: 'absolute',
-        bottom: 60,
-        left: 20,
-        right: 20,
-        backgroundColor: 'transparent',
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'flex-end',
-    },
-    editPetButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.9)',
-        borderRadius: 15,
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-    },
-    editPetButtonText: {
-        color: '#045b26',
-        fontWeight: '600',
-        fontSize: 12,
-    },
-    actionButtons: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 30,
-    },
-    primaryButton: {
-        backgroundColor: '#045b26',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        flex: 1,
-        marginRight: 8,
-        alignItems: 'center',
+    imagePlaceholder: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#F0F8F0',
         justifyContent: 'center',
-        elevation: 1,
-    },
-    secondaryButton: {
-        backgroundColor: 'transparent',
-        borderRadius: 20,
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        flex: 1,
-        marginLeft: 8,
-        borderWidth: 1,
-        borderColor: '#045b26',
         alignItems: 'center',
-        justifyContent: 'center',
     },
-    primaryButtonText: {
-        color: '#fff',
-        fontWeight: '600',
-        fontSize: 12,
-        textAlign: 'center',
-    },
-    secondaryButtonText: {
-        color: '#045b26',
-        fontWeight: '600',
-        fontSize: 12,
-        textAlign: 'center',
-    },
-    detailsGrid: {
-        backgroundColor: '#A1D998',
+    // Content Section
+    contentSection: {
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 30,
+        borderTopRightRadius: 30,
+        marginTop: 10, // Added padding between pet name/ID and container
+        paddingTop: 32,
         paddingHorizontal: 24,
-        paddingTop: 5,
-        paddingBottom: 24,
-    },
-    gridRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        marginBottom: 16,
-    },
-    detailCard: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
         flex: 1,
-        marginHorizontal: 4,
-        elevation: 2,
+    },
+    
+    // Quick Stats Bar
+    quickStatsBar: {
+        flexDirection: 'row',
+        backgroundColor: '#F8FFF8',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 24,
+        borderWidth: 1,
+        borderColor: '#E8F5E8',
+    },
+    statItem: {
+        flex: 1,
         alignItems: 'center',
     },
-    detailLabel: {
+    statIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 8,
+    },
+    statLabel: {
         fontSize: 12,
         color: '#666',
-        marginBottom: 4,
-        textTransform: 'uppercase',
-        fontWeight: '500',
+        fontFamily: 'Flink',
+        marginBottom: 2,
     },
-    detailValue: {
+    statValue: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'System', // Use system font for numeric values
+        textAlign: 'center',
+    },
+    // Action Buttons
+    actionButtonsContainer: {
+        marginBottom: 24,
+    },
+    actionButton: {
+        backgroundColor: '#045b26',
+        borderRadius: 16,
+        paddingVertical: 16,
+        marginBottom: 12,
+        alignItems: 'center',
+        flexDirection: 'row',
+        justifyContent: 'center',
+    },
+    actionButtonSecondary: {
+        backgroundColor: '#F8FFF8',
+        borderWidth: 1,
+        borderColor: '#E8F5E8',
+    },
+    actionButtonIcon: {
+        marginRight: 8,
+    },
+    actionButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: 'bold',
+        fontFamily: 'Jumper',
+    },
+    actionButtonTextSecondary: {
+        color: '#045b26',
+    },
+    
+    // Info Cards
+    infoCardsContainer: {
+        marginBottom: 24,
+    },
+    sectionTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+        marginBottom: 16,
+    },
+    infoGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    infoCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 16,
+        width: (width - 64) / 2,
+        borderWidth: 1,
+        borderColor: '#F0F0F0',
+        alignItems: 'center',
+    },
+    infoCardIcon: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 12,
+    },
+    infoCardLabel: {
+        fontSize: 12,
+        color: '#666',
+        fontFamily: 'Flink',
+        marginBottom: 4,
+        textAlign: 'center',
+    },
+    infoCardValue: {
         fontSize: 16,
         fontWeight: 'bold',
         color: '#045b26',
+        fontFamily: 'System', // Use system font for values that may contain numbers
         textAlign: 'center',
+    },
+    
+    // Loading and Error States
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+        paddingHorizontal: 24,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#DC3545',
+        textAlign: 'center',
+        fontFamily: 'Flink',
+        marginVertical: 16,
+    },
+    retryButton: {
+        backgroundColor: '#045b26',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+        marginTop: 16,
+    },
+    retryButtonText: {
+        color: '#FFFFFF',
+        fontWeight: 'bold',
+        fontFamily: 'Jumper',
     },
 });
 
@@ -182,6 +254,8 @@ export default function PetDetailsPage({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [editModalVisible, setEditModalVisible] = useState(false);
+    
+    // Animation references removed for cleaner experience
 
     useEffect(() => {
         if (petId) {
@@ -215,6 +289,7 @@ export default function PetDetailsPage({
 
             if (result.success && result.data) {
                 setPetData(result.data as PetData);
+                // Animation removed for immediate display
             } else {
                 const errorMsg = result.message || 'Failed to load pet details';
                 setError(errorMsg);
@@ -301,144 +376,158 @@ export default function PetDetailsPage({
 
     if (loading) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={[styles.header, { top: 20 }]}>
-                    <TouchableOpacity 
-                        style={styles.backButton}
-                        onPress={() => onNavigate('Pet profile')}
-                    >
-                        <MaterialIcons name="arrow-back" size={28} color="#045b26" />
-                    </TouchableOpacity>
-                </View>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <ActivityIndicator size="large" color="#045b26" />
-                    <Text style={{ marginTop: 16, color: '#666', fontSize: 16 }}>Loading pet details...</Text>
-                </View>
-            </SafeAreaView>
+            <View style={styles.loadingContainer}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => onNavigate('Pet profile')}
+                >
+                    <MaterialIcons name="arrow-back" size={24} color="#045b26" />
+                </TouchableOpacity>
+                <ActivityIndicator size="large" color="#045b26" />
+                <Text style={{ marginTop: 16, color: '#666', fontSize: 16, fontFamily: 'Flink' }}>Loading pet details...</Text>
+            </View>
         );
     }
 
     if (error || !petData) {
         return (
-            <SafeAreaView style={styles.container}>
-                <View style={[styles.header, { top: 20 }]}>
-                    <TouchableOpacity 
-                        style={styles.backButton}
-                        onPress={() => onNavigate('Pet profile')}
-                    >
-                        <MaterialIcons name="arrow-back" size={28} color="#045b26" />
-                    </TouchableOpacity>
-                </View>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <MaterialIcons name="error-outline" size={64} color="#ff6b6b" />
-                    <Text style={{ marginTop: 16, color: '#ff6b6b', fontSize: 16, textAlign: 'center' }}>
-                        {error || 'Pet not found'}
-                    </Text>
-                    <TouchableOpacity 
-                        style={{ 
-                            backgroundColor: '#045b26', 
-                            paddingHorizontal: 20, 
-                            paddingVertical: 10, 
-                            borderRadius: 8, 
-                            marginTop: 16 
-                        }}
-                        onPress={() => onNavigate('Pet profile')}
-                    >
-                        <Text style={{ color: '#fff', fontWeight: 'bold' }}>Back to Pets</Text>
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
+            <View style={styles.errorContainer}>
+                <TouchableOpacity 
+                    style={styles.backButton}
+                    onPress={() => onNavigate('Pet profile')}
+                >
+                    <MaterialIcons name="arrow-back" size={24} color="#045b26" />
+                </TouchableOpacity>
+                <MaterialIcons name="error-outline" size={64} color="#DC3545" />
+                <Text style={styles.errorText}>
+                    {error || 'Pet not found'}
+                </Text>
+                <TouchableOpacity 
+                    style={styles.retryButton}
+                    onPress={() => onNavigate('Pet profile')}
+                >
+                    <Text style={styles.retryButtonText}>Back to Pets</Text>
+                </TouchableOpacity>
+            </View>
         );
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <ScrollView style={styles.content}>
-                {/* Pet Image */}
-                <View style={styles.petImageContainer}>
+        <View style={styles.container}>
+            {/* Back Button - Fixed Position */}
+            <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => onNavigate('Pet profile')}
+            >
+                <MaterialIcons name="arrow-back" size={24} color="#045b26" />
+            </TouchableOpacity>
+
+            {/* Edit Button - Fixed Position */}
+            <TouchableOpacity 
+                style={styles.editButton}
+                onPress={() => setEditModalVisible(true)}
+            >
+                <MaterialIcons name="edit" size={24} color="#045b26" />
+            </TouchableOpacity>
+
+            <ScrollView showsVerticalScrollIndicator={false}>
+                {/* Hero Image Section */}
+                <View style={styles.heroSection}>
                     {(petData as any).photo_url ? (
                         <Image source={{ uri: (petData as any).photo_url }} style={styles.petImage} />
                     ) : (
                         <View style={styles.imagePlaceholder}>
-                            <MaterialIcons name="pets" size={48} color="#fff" />
+                            <MaterialCommunityIcons name="camera-off" size={64} color="#999" />
                         </View>
                     )}
                     
-                    {/* Back Button - Overlay on Image */}
-                    <View style={styles.header}>
-                        <TouchableOpacity 
-                            style={styles.backButton}
-                            onPress={() => onNavigate('Pet profile')}
-                        >
-                            <MaterialIcons name="arrow-back" size={28} color="#045b26" />
-                        </TouchableOpacity>
-                    </View>
-                    
-                    {/* Pet Name and ID - Overlay on Image */}
-                    <View style={styles.petNameIdSection}>
-                        <View>
-                            <Text style={styles.petName}>{petData.name}</Text>
-                            <Text style={styles.petId}>Pet ID: {petData.pet_id}</Text>
+                    {/* Gradient Overlay with Pet Name */}
+                    <LinearGradient
+                        colors={['transparent', 'rgba(0,0,0,0.6)']}
+                        style={styles.heroGradient}
+                    >
+                        <Text style={styles.petName}>{petData.name}</Text>
+                        <Text style={styles.petId}>Pet ID: {petData.pet_id}</Text>
+                    </LinearGradient>
+                </View>
+
+                {/* Content Section */}
+                <View style={styles.contentSection}>
+                    {/* Quick Stats Bar */}
+                    <View style={styles.quickStatsBar}>
+                        <View style={styles.statItem}>
+                            <View style={styles.statIcon}>
+                                <MaterialCommunityIcons name="calendar" size={20} color="#045b26" />
+                            </View>
+                            <Text style={styles.statLabel}>Age</Text>
+                            <Text style={styles.statValue}>{formatPetAge(petData.date_of_birth)}</Text>
                         </View>
-                        <TouchableOpacity 
-                            style={styles.editPetButton}
-                            onPress={() => setEditModalVisible(true)}
-                        >
-                            <Text style={styles.editPetButtonText}>Edit my pet's profile</Text>
-                        </TouchableOpacity>
+                        <View style={styles.statItem}>
+                            <View style={styles.statIcon}>
+                                <MaterialCommunityIcons name="paw" size={20} color="#045b26" />
+                            </View>
+                            <Text style={styles.statLabel}>Species</Text>
+                            <Text style={styles.statValue}>{petData.species}</Text>
+                        </View>
+                        <View style={styles.statItem}>
+                            <View style={styles.statIcon}>
+                                <MaterialCommunityIcons name="gender-male-female" size={20} color="#045b26" />
+                            </View>
+                            <Text style={styles.statLabel}>Gender</Text>
+                            <Text style={styles.statValue}>{petData.gender ? petData.gender.charAt(0).toUpperCase() + petData.gender.slice(1) : 'Unknown'}</Text>
+                        </View>
                     </View>
-                </View>
 
-                {/* Main Information Section */}
-                <View style={styles.mainInfoSection}>
-                </View>
-
-                {/* Detailed Information Grid */}
-                <View style={styles.detailsGrid}>
                     {/* Action Buttons */}
-                    <View style={styles.actionButtons}>
+                    <View style={styles.actionButtonsContainer}>
                         <TouchableOpacity 
-                            style={styles.primaryButton}
+                            style={styles.actionButton}
                             onPress={() => onNavigate('Pet MedRecords')}
                         >
-                            <Text style={styles.primaryButtonText}>View Medical History</Text>
+                            <MaterialCommunityIcons name="file-document-outline" size={24} color="#FFFFFF" style={styles.actionButtonIcon} />
+                            <Text style={styles.actionButtonText}>Medical History</Text>
                         </TouchableOpacity>
                         <TouchableOpacity 
-                            style={styles.secondaryButton}
+                            style={[styles.actionButton, styles.actionButtonSecondary]}
                             onPress={() => onNavigate('Pet VacCard')}
                         >
-                            <Text style={styles.secondaryButtonText}>View Vaccine History</Text>
+                            <MaterialCommunityIcons name="shield-check" size={24} color="#045b26" style={styles.actionButtonIcon} />
+                            <Text style={[styles.actionButtonText, styles.actionButtonTextSecondary]}>Vaccination Records</Text>
                         </TouchableOpacity>
                     </View>
-                    {/* Top Row */}
-                    <View style={styles.gridRow}>
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailLabel}>Age</Text>
-                            <Text style={styles.detailValue}>{formatPetAge(petData.date_of_birth)}</Text>
-                        </View>
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailLabel}>Type</Text>
-                            <Text style={styles.detailValue}>{petData.species}</Text>
-                        </View>
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailLabel}>Color</Text>
-                            <Text style={styles.detailValue}>{petData.color || 'Unknown'}</Text>
-                        </View>
-                    </View>
 
-                    {/* Bottom Row */}
-                    <View style={styles.gridRow}>
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailLabel}>Bday</Text>
-                            <Text style={styles.detailValue}>{formatDate(petData.date_of_birth)}</Text>
-                        </View>
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailLabel}>Gender</Text>
-                            <Text style={styles.detailValue}>{petData.gender ? petData.gender.charAt(0).toUpperCase() + petData.gender.slice(1) : 'Unknown'}</Text>
-                        </View>
-                        <View style={styles.detailCard}>
-                            <Text style={styles.detailLabel}>Breed</Text>
-                            <Text style={styles.detailValue}>{petData.breed || 'Mixed Breed'}</Text>
+                    {/* Pet Information Cards */}
+                    <View style={styles.infoCardsContainer}>
+                        <Text style={styles.sectionTitle}>Pet Information</Text>
+                        <View style={styles.infoGrid}>
+                            <View style={styles.infoCard}>
+                                <View style={styles.infoCardIcon}>
+                                    <MaterialCommunityIcons name="cake-variant" size={24} color="#045b26" />
+                                </View>
+                                <Text style={styles.infoCardLabel}>Birthday</Text>
+                                <Text style={styles.infoCardValue}>{formatDate(petData.date_of_birth)}</Text>
+                            </View>
+                            <View style={styles.infoCard}>
+                                <View style={styles.infoCardIcon}>
+                                    <MaterialCommunityIcons name="palette" size={24} color="#045b26" />
+                                </View>
+                                <Text style={styles.infoCardLabel}>Color</Text>
+                                <Text style={styles.infoCardValue}>{petData.color || 'Unknown'}</Text>
+                            </View>
+                            <View style={styles.infoCard}>
+                                <View style={styles.infoCardIcon}>
+                                    <MaterialCommunityIcons name="dna" size={24} color="#045b26" />
+                                </View>
+                                <Text style={styles.infoCardLabel}>Breed</Text>
+                                <Text style={styles.infoCardValue}>{petData.breed || 'Mixed Breed'}</Text>
+                            </View>
+                            <View style={styles.infoCard}>
+                                <View style={styles.infoCardIcon}>
+                                    <MaterialCommunityIcons name="heart" size={24} color="#045b26" />
+                                </View>
+                                <Text style={styles.infoCardLabel}>Status</Text>
+                                <Text style={styles.infoCardValue}>{petData.reproductive_status || 'Unknown'}</Text>
+                            </View>
                         </View>
                     </View>
                 </View>
@@ -451,6 +540,6 @@ export default function PetDetailsPage({
                 petData={petData}
                 onSave={handleSavePet}
             />
-        </SafeAreaView>
+        </View>
     );
 } 

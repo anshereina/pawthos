@@ -1,43 +1,244 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicator, ScrollView, Dimensions, SafeAreaView } from 'react-native';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getUserProfile, getCurrentUser, updateStoredUser, isAuthenticated, updateUserProfile } from '../../utils/auth.utils';
 import EditProfileModal from '../modals/EditProfileModal';
 
+const { width } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f7f7f7' },
-    content: { flex: 1, padding: 24 },
-    profileRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 24 },
-    avatarContainer: { position: 'relative', marginRight: 20 },
-    avatar: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#e0ffe6' },
+    container: { 
+        flex: 1, 
+        backgroundColor: '#FFFFFF' 
+    },
+    content: { 
+        flex: 1, 
+        paddingHorizontal: 20,
+        paddingVertical: 16,
+    },
+    // Modern Profile Header Card
+    profileCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 20,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    profileGradient: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: 4,
+        backgroundColor: '#045b26',
+    },
+    profileHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 0,
+    },
+    avatarContainer: { 
+        position: 'relative', 
+        marginRight: 20 
+    },
+    avatar: { 
+        width: 70, 
+        height: 70, 
+        borderRadius: 35, 
+        backgroundColor: '#E8F5E8',
+        borderWidth: 2,
+        borderColor: '#F0F8F0',
+    },
     editAvatarBtn: { 
         position: 'absolute', 
         bottom: 0, 
         right: 0, 
         backgroundColor: '#045b26', 
-        borderRadius: 15, 
-        width: 30, 
-        height: 30, 
+        borderRadius: 14, 
+        width: 28, 
+        height: 28, 
         justifyContent: 'center', 
         alignItems: 'center',
         borderWidth: 2,
-        borderColor: '#fff'
+        borderColor: '#FFFFFF'
     },
-    name: { fontSize: 22, fontWeight: 'bold', color: '#045b26' },
-    email: { fontSize: 16, color: '#045b26', marginBottom: 8 },
-    section: { marginBottom: 24 },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', color: '#045b26', marginBottom: 8 },
-    itemRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-    itemIcon: { marginRight: 12 },
-    itemText: { fontSize: 15, color: '#333' },
-    itemTextEmpty: { fontSize: 15, color: '#999', fontStyle: 'italic' },
-    editBtn: { marginTop: 8, alignSelf: 'flex-start', backgroundColor: '#e0ffe6', borderRadius: 8, paddingVertical: 6, paddingHorizontal: 16 },
-    editBtnText: { color: '#045b26', fontWeight: 'bold' },
-    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    errorContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
-    errorText: { fontSize: 16, color: '#666', textAlign: 'center', marginBottom: 16 },
-    retryBtn: { backgroundColor: '#045b26', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 8 },
-    retryBtnText: { color: '#fff', fontWeight: 'bold' },
+    profileInfo: {
+        flex: 1,
+    },
+    name: { 
+        fontSize: 20, 
+        fontWeight: 'bold', 
+        color: '#045b26',
+        fontFamily: 'Jumper',
+        marginBottom: 2,
+    },
+    email: { 
+        fontSize: 14, 
+        color: '#666',
+        fontFamily: 'Flink',
+        marginBottom: 8,
+    },
+    editBtn: { 
+        backgroundColor: '#045b26', 
+        borderRadius: 10, 
+        paddingVertical: 8, 
+        paddingHorizontal: 12,
+        alignSelf: 'flex-start',
+    },
+    editBtnText: { 
+        color: '#FFFFFF', 
+        fontWeight: 'bold',
+        fontFamily: 'Jumper',
+        fontSize: 12,
+    },
+    // Modern Info Cards
+    infoCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 16,
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: '#F0F8F0',
+    },
+    cardHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 12,
+    },
+    cardIconContainer: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+    },
+    cardTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#045b26',
+        fontFamily: 'Jumper',
+    },
+    infoItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        backgroundColor: '#F8FFF8',
+        borderRadius: 10,
+        marginBottom: 8,
+    },
+    infoItemIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+    },
+    infoItemText: {
+        fontSize: 14,
+        color: '#045b26',
+        fontFamily: 'Flink',
+        flex: 1,
+    },
+    infoItemTextEmpty: {
+        fontSize: 14,
+        color: '#999',
+        fontFamily: 'Flink',
+        fontStyle: 'italic',
+        flex: 1,
+    },
+    // Settings Items
+    settingsItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        backgroundColor: '#F8FFF8',
+        borderRadius: 10,
+        marginBottom: 8,
+    },
+    settingsItemIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: '#E8F5E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 10,
+    },
+    settingsItemText: {
+        fontSize: 14,
+        color: '#045b26',
+        fontFamily: 'Flink',
+        flex: 1,
+    },
+    settingsItemArrow: {
+        marginLeft: 8,
+    },
+    // Loading and Error States
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#FFFFFF',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+        fontFamily: 'Flink',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+        backgroundColor: '#FFFFFF',
+    },
+    errorIconContainer: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#FFE8E8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 20,
+    },
+    errorTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        color: '#DC3545',
+        fontFamily: 'Jumper',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    errorText: {
+        fontSize: 14,
+        color: '#666',
+        fontFamily: 'Flink',
+        textAlign: 'center',
+        marginBottom: 24,
+        lineHeight: 20,
+    },
+    retryBtn: {
+        backgroundColor: '#045b26',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 16,
+    },
+    retryBtnText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: 'bold',
+        fontFamily: 'Jumper',
+    },
 });
 
 export default function MyAccountPage() {
@@ -151,88 +352,118 @@ export default function MyAccountPage() {
 
     if (loading) {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#045b26" />
-                    <Text style={{ marginTop: 16, color: '#666' }}>Loading profile...</Text>
+                    <Text style={styles.loadingText}>Loading profile...</Text>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     if (error && !userData) {
         return (
-            <View style={styles.container}>
+            <SafeAreaView style={styles.container}>
                 <View style={styles.errorContainer}>
+                    <View style={styles.errorIconContainer}>
+                        <MaterialIcons name="error-outline" size={40} color="#DC3545" />
+                    </View>
+                    <Text style={styles.errorTitle}>Something went wrong</Text>
                     <Text style={styles.errorText}>{error}</Text>
                     <TouchableOpacity style={styles.retryBtn} onPress={loadUserProfile}>
-                        <Text style={styles.retryBtnText}>Retry</Text>
+                        <Text style={styles.retryBtnText}>Try Again</Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+            </SafeAreaView>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <ScrollView style={styles.content}>
-                <View style={styles.profileRow}>
-                    <View style={styles.avatarContainer}>
-                        {userData?.photo_url ? (
-                            <Image 
-                                source={{ uri: userData.photo_url }} 
-                                style={styles.avatar}
-                                defaultSource={require('../../assets/images/icon.png')}
-                            />
-                        ) : (
-                            <Image 
-                                source={require('../../assets/images/icon.png')} 
-                                style={styles.avatar}
-                            />
-                        )}
-                        <TouchableOpacity style={styles.editAvatarBtn} onPress={handleEditProfile}>
-                            <MaterialIcons name="camera-alt" size={16} color="#fff" />
-                        </TouchableOpacity>
-                    </View>
-                    <View>
-                        <Text style={styles.name}>{userData?.name || 'User Name'}</Text>
-                        <Text style={styles.email}>{userData?.email || 'user@email.com'}</Text>
-                        <TouchableOpacity style={styles.editBtn} onPress={handleEditProfile}>
-                            <Text style={styles.editBtnText}>Edit Profile</Text>
-                        </TouchableOpacity>
+                {/* Modern Profile Header Card */}
+                <View style={styles.profileCard}>
+                    <View style={styles.profileGradient} />
+                    <View style={styles.profileHeader}>
+                        <View style={styles.avatarContainer}>
+                            {userData?.photo_url ? (
+                                <Image 
+                                    source={{ uri: userData.photo_url }} 
+                                    style={styles.avatar}
+                                    defaultSource={require('../../assets/images/icon.png')}
+                                />
+                            ) : (
+                                <Image 
+                                    source={require('../../assets/images/icon.png')} 
+                                    style={styles.avatar}
+                                />
+                            )}
+                            <TouchableOpacity style={styles.editAvatarBtn} onPress={handleEditProfile}>
+                                <MaterialIcons name="camera-alt" size={14} color="#FFFFFF" />
+                            </TouchableOpacity>
+                        </View>
+                        <View style={styles.profileInfo}>
+                            <Text style={styles.name}>{userData?.name || 'User Name'}</Text>
+                            <Text style={styles.email}>{userData?.email || 'user@email.com'}</Text>
+                            <TouchableOpacity style={styles.editBtn} onPress={handleEditProfile}>
+                                <Text style={styles.editBtnText}>Edit Profile</Text>
+                            </TouchableOpacity>
+                        </View>
                     </View>
                 </View>
                 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Account</Text>
-                    <View style={styles.itemRow}>
-                        <MaterialIcons name="phone" size={20} color="#045b26" style={styles.itemIcon} />
-                        <Text style={userData?.phone_number ? styles.itemText : styles.itemTextEmpty}>
+                {/* Account Information Card */}
+                <View style={styles.infoCard}>
+                    <View style={styles.cardHeader}>
+                        <View style={styles.cardIconContainer}>
+                            <MaterialCommunityIcons name="account-circle" size={16} color="#045b26" />
+                        </View>
+                        <Text style={styles.cardTitle}>Account Information</Text>
+                    </View>
+                    
+                    <View style={styles.infoItem}>
+                        <View style={styles.infoItemIcon}>
+                            <MaterialIcons name="phone" size={16} color="#045b26" />
+                        </View>
+                        <Text style={userData?.phone_number ? styles.infoItemText : styles.infoItemTextEmpty}>
                             {userData?.phone_number || 'No phone number added'}
                         </Text>
                     </View>
-                    <View style={styles.itemRow}>
-                        <MaterialIcons name="location-on" size={20} color="#045b26" style={styles.itemIcon} />
-                        <Text style={userData?.address ? styles.itemText : styles.itemTextEmpty}>
+                    
+                    <View style={styles.infoItem}>
+                        <View style={styles.infoItemIcon}>
+                            <MaterialIcons name="location-on" size={16} color="#045b26" />
+                        </View>
+                        <Text style={userData?.address ? styles.infoItemText : styles.infoItemTextEmpty}>
                             {userData?.address || 'No address added'}
                         </Text>
                     </View>
                 </View>
                 
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Settings</Text>
-                    <View style={styles.itemRow}>
-                        <MaterialIcons name="lock-outline" size={20} color="#045b26" style={styles.itemIcon} />
-                        <TouchableOpacity onPress={handleChangePassword}>
-                            <Text style={styles.itemText}>Change Password</Text>
-                        </TouchableOpacity>
+                {/* Settings Card */}
+                <View style={styles.infoCard}>
+                    <View style={styles.cardHeader}>
+                        <View style={styles.cardIconContainer}>
+                            <MaterialCommunityIcons name="cog" size={16} color="#045b26" />
+                        </View>
+                        <Text style={styles.cardTitle}>Settings</Text>
                     </View>
-                    <View style={styles.itemRow}>
-                        <MaterialIcons name="notifications" size={20} color="#045b26" style={styles.itemIcon} />
-                        <TouchableOpacity onPress={handleNotifications}>
-                            <Text style={styles.itemText}>Notifications</Text>
-                        </TouchableOpacity>
-                    </View>
+                    
+                    <TouchableOpacity style={styles.settingsItem} onPress={handleChangePassword}>
+                        <View style={styles.settingsItemIcon}>
+                            <MaterialIcons name="lock-outline" size={16} color="#045b26" />
+                        </View>
+                        <Text style={styles.settingsItemText}>Change Password</Text>
+                        <MaterialIcons name="chevron-right" size={16} color="#045b26" style={styles.settingsItemArrow} />
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity style={styles.settingsItem} onPress={handleNotifications}>
+                        <View style={styles.settingsItemIcon}>
+                            <MaterialIcons name="notifications" size={16} color="#045b26" />
+                        </View>
+                        <Text style={styles.settingsItemText}>Notifications</Text>
+                        <MaterialIcons name="chevron-right" size={16} color="#045b26" style={styles.settingsItemArrow} />
+                    </TouchableOpacity>
                 </View>
             </ScrollView>
             
@@ -243,6 +474,6 @@ export default function MyAccountPage() {
                 userData={userData}
                 loading={updating}
             />
-        </View>
+        </SafeAreaView>
     );
 }

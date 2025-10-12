@@ -1,16 +1,23 @@
 // API Configuration
-// For development, you'll need to replace 'localhost' with your computer's IP address
-// To find your IP: 
-// - Windows: Run 'ipconfig' in Command Prompt, look for IPv4 Address
-// - Mac/Linux: Run 'ifconfig' in Terminal, look for inet address
+// Prefer an env override via EXPO_PUBLIC_API_BASE_URL.
+// Otherwise, auto-detect sensible defaults for emulator/simulator during development.
+import { Platform } from 'react-native';
 
-// Example: If your computer's IP is 192.168.1.100, use:
-// export const API_BASE_URL = 'http://192.168.1.100:3000/api';
+function getDefaultDevBaseUrl(): string {
+  // Try different URLs based on the platform
+  if (Platform.OS === 'web') {
+    return 'http://localhost:8000/api';
+  } else {
+    // For mobile device/Expo, use the computer's network IP address
+    return 'http://192.168.1.13:8000/api';
+  }
+}
 
-// For now, using localhost (you'll need to change this)
-export const API_BASE_URL = __DEV__ 
-  ? 'http://192.168.1.6:8000/api'  // Python FastAPI server on port 8000
-  : 'https://your-production-api.com/api';
+const ENV_BASE = (typeof process !== 'undefined' && (process as any)?.env?.EXPO_PUBLIC_API_BASE_URL) || '';
+
+export const API_BASE_URL = __DEV__
+  ? (ENV_BASE || getDefaultDevBaseUrl())
+  : (ENV_BASE || 'https://your-production-api.com/api');
 
 // Helper function to get the correct API URL
 export function getApiUrl(): string {

@@ -204,10 +204,6 @@ export default function VetHealthPage({ onNavigate }: { onNavigate?: (page: stri
 
     return (
         <View style={styles.container}>
-            {/* Header */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Local Shipment of Dogs and Cats</Text>
-            </View>
 
             <ScrollView style={styles.content}>
                 {/* Qualifications Section */}

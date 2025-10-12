@@ -402,10 +402,16 @@ export const getPainLevelColor = (painLevel: string): string => {
     const level = (painLevel || '').toLowerCase();
     if (level.includes('level 0') || level.includes('no pain')) {
         return '#4CAF50'; // Green
-    } else if (level.includes('level 1') || level.includes('moderate')) {
+    } else if (level.includes('level 1') || level.includes('mild')) {
+        return '#8BC34A'; // Light green-yellow for mild
+    } else if (level.includes('level 2') || level.includes('moderate pain')) {
         return '#FF9800'; // Orange
-    } else if (level.includes('level 2') || level.includes('severe')) {
+    } else if (level.includes('level 3') || level.includes('moderate to severe')) {
+        return '#FF7043'; // Deep orange
+    } else if (level.includes('level 4') || level.includes('severe')) {
         return '#F44336'; // Red
+    } else if (level.includes('level 5') || level.includes('worst')) {
+        return '#B71C1C'; // Dark red
     }
     return '#9e9e9e'; // Gray (default)
 };
@@ -414,9 +420,10 @@ export const getPainLevelColor = (painLevel: string): string => {
  * Map numeric pain score to human-readable label
  */
 export const getPainLevelLabelFromScore = (painScore?: number): string => {
-    if (painScore === 0) return 'Level 0 - No Pain';
-    if (painScore === 1) return 'Level 1 - Moderate Pain';
-    if (painScore === 2) return 'Level 2 - Severe Pain';
+    // Backend currently stores compact score (0,1,2). Map to our 6-level labels broadly.
+    if (painScore === 0) return 'Level 0 (No Pain)';
+    if (painScore === 1) return 'Level 2 (Moderate Pain)';
+    if (painScore === 2) return 'Level 4 (Severe Pain)';
     return '';
 };
 

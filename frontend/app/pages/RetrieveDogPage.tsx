@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 
 const retrievalGuidelines = [
@@ -12,50 +12,53 @@ const retrievalGuidelines = [
 
 export default function RetrieveDogPage({ onBack }: { onBack?: () => void }) {
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.headerRow}>
-        <TouchableOpacity onPress={onBack || (() => {})} style={{marginRight: 8}}>
-          <MaterialIcons name="chevron-left" size={32} color="#045b26" />
-        </TouchableOpacity>
-        <MaterialCommunityIcons name="dog" size={32} color="#045b26" style={{ marginRight: 12 }} />
-        <Text style={styles.title}>How to Retrieve Your Dog</Text>
       </View>
-      {/* Guidelines List */}
-      <View style={styles.guidelinesBox}>
+      <ScrollView 
+        style={styles.content}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Guidelines List */}
+        <View style={styles.guidelinesBox}>
         {retrievalGuidelines.map((item, idx) => (
           <View key={idx} style={styles.guidelineItem}>
             <Text style={styles.guidelineNumber}>{idx + 1}.</Text>
             <Text style={styles.guidelineText}>{item}</Text>
           </View>
         ))}
-      </View>
-    </View>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f7f7f7',
-    paddingTop: 32,
-    paddingHorizontal: 20,
+    backgroundColor: '#ffffff',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 5,
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#045b26',
+  content: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   guidelinesBox: {
-    backgroundColor: '#4CAF50',
-    borderRadius: 14,
-    padding: 18,
-    elevation: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: '#E8E8E8',
   },
   guidelineItem: {
     flexDirection: 'row',
@@ -63,15 +66,16 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   guidelineNumber: {
-    color: '#fff',
+    color: '#045b26',
     fontWeight: 'bold',
-    fontSize: 17,
+    fontSize: 16,
     marginRight: 10,
     marginTop: 2,
   },
   guidelineText: {
-    color: '#fff',
+    color: '#333',
     fontSize: 15,
     flex: 1,
+    lineHeight: 22,
   },
 }); 
