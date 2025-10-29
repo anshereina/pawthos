@@ -182,7 +182,7 @@ export default function AppointmentDetailsModal({
                     </TouchableOpacity>
                     
                     <ScrollView showsVerticalScrollIndicator={false}>
-                        <Text style={styles.modalTitle}>Appointment Details</Text>
+                        <Text style={styles.modalTitle}>Appointment Update</Text>
                         <View style={styles.modalTitleUnderline} />
                         
                         {/* Appointment Information */}

@@ -483,27 +483,7 @@ export default function AppointmentPage({ onNavigate }: { onNavigate: (page: str
                     <Text style={styles.searchText}>Search appointments...</Text>
                 </View>
 
-                {/* Quick Stats */}
-                <View style={styles.statsContainer}>
-                    <Text style={styles.statsTitle}>Appointment Overview</Text>
-                    <View style={styles.statsRow}>
-                        <View style={styles.statCard}>
-                            <MaterialCommunityIcons name="calendar-clock" size={24} color="#045b26" style={styles.statIcon} />
-                            <Text style={styles.statNumber}>{upcomingCount}</Text>
-                            <Text style={styles.statLabel}>Upcoming</Text>
-                        </View>
-                        <View style={styles.statCard}>
-                            <MaterialCommunityIcons name="calendar-check" size={24} color="#045b26" style={styles.statIcon} />
-                            <Text style={styles.statNumber}>{totalCount}</Text>
-                            <Text style={styles.statLabel}>Total</Text>
-                        </View>
-                        <View style={styles.statCard}>
-                            <MaterialCommunityIcons name="calendar-remove" size={24} color="#045b26" style={styles.statIcon} />
-                            <Text style={styles.statNumber}>{cancelledCount}</Text>
-                            <Text style={styles.statLabel}>Cancelled</Text>
-                        </View>
-                    </View>
-                </View>
+                {/* Quick Stats removed as requested */}
 
                 {/* Filter Tabs */}
                 <View style={styles.filterContainer}>
@@ -603,42 +583,47 @@ export default function AppointmentPage({ onNavigate }: { onNavigate: (page: str
                                             </Text>
                                         )}
                                     </View>
-                                    {canModifyAppointment(item.status) && (
-                                        <View style={styles.appointmentActions}>
-                                            <TouchableOpacity
-                                                style={[styles.actionButton, styles.secondaryButton]}
-                                                onPress={() => {
-                                                    setSelectedAppointment(item);
-                                                    setModalVisible(true);
-                                                }}
-                                            >
-                                                <Text style={[styles.buttonText, styles.secondaryButtonText]}>
-                                                    View Details
-                                                </Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.actionButton, styles.primaryButton]}
-                                                onPress={() => {
-                                                    setSelectedAppointment(item);
-                                                    onNavigate('Appointment Scheduling', { appointmentToEdit: item });
-                                                }}
-                                            >
-                                                <Text style={[styles.buttonText, styles.primaryButtonText]}>
-                                                    Reschedule
-                                                </Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.actionButton, styles.dangerButton]}
-                                                onPress={async () => {
-                                                    await handleStatusUpdate(item.id, 'cancelled');
-                                                }}
-                                            >
-                                                <Text style={[styles.buttonText, styles.dangerButtonText]}>
-                                                    Cancel
-                                                </Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    )}
+                                    <View style={styles.appointmentActions}>
+                                        {/* View Details is always available */}
+                                        <TouchableOpacity
+                                            style={[styles.actionButton, styles.secondaryButton]}
+                                            onPress={() => {
+                                                setSelectedAppointment(item);
+                                                setModalVisible(true);
+                                            }}
+                                        >
+                                            <Text style={[styles.buttonText, styles.secondaryButtonText]}>
+                                                View Details
+                                            </Text>
+                                        </TouchableOpacity>
+
+                                        {/* Reschedule and Cancel only when modifiable */}
+                                        {canModifyAppointment(item.status) && (
+                                            <>
+                                                <TouchableOpacity
+                                                    style={[styles.actionButton, styles.primaryButton]}
+                                                    onPress={() => {
+                                                        setSelectedAppointment(item);
+                                                        onNavigate('Appointment Scheduling', { appointmentToEdit: item });
+                                                    }}
+                                                >
+                                                    <Text style={[styles.buttonText, styles.primaryButtonText]}>
+                                                        Reschedule
+                                                    </Text>
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={[styles.actionButton, styles.dangerButton]}
+                                                    onPress={async () => {
+                                                        await handleStatusUpdate(item.id, 'cancelled');
+                                                    }}
+                                                >
+                                                    <Text style={[styles.buttonText, styles.dangerButtonText]}>
+                                                        Cancel
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            </>
+                                        )}
+                                    </View>
                                 </View>
                             ))
                         )}
