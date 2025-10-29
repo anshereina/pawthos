@@ -609,7 +609,7 @@ export default function AppointmentPage({ onNavigate }: { onNavigate: (page: str
                                                 style={[styles.actionButton, styles.secondaryButton]}
                                                 onPress={() => {
                                                     setSelectedAppointment(item);
-                                                    setActionModalVisible(true);
+                                                    setModalVisible(true);
                                                 }}
                                             >
                                                 <Text style={[styles.buttonText, styles.secondaryButtonText]}>
