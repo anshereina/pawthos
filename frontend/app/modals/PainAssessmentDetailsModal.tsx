@@ -108,6 +108,24 @@ const styles = StyleSheet.create({
     painLevel5: {
         color: '#B71C1C', // Dark red for worst pain possible
     },
+    imageSection: {
+        marginBottom: 16,
+    },
+    imageContainer: {
+        borderRadius: 12,
+        overflow: 'hidden',
+        backgroundColor: '#f0f0f0',
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    assessmentImage: {
+        width: '100%',
+        height: 200,
+        borderRadius: 12,
+    },
 });
 
 // Pain assessment questions
@@ -203,6 +221,20 @@ export default function PainAssessmentDetailsModal({ visible, onClose, record }:
                                         <Text style={styles.infoValue}>{formatAssessmentDate(record.assessment_date)}</Text>
                                     </View>
                                 </View>
+
+                                {/* Assessment Image */}
+                                {record.image_url && (
+                                    <View style={styles.imageSection}>
+                                        <Text style={[styles.modalTitle, { marginBottom: 12, fontSize: 18 }]}>Assessment Photo</Text>
+                                        <View style={styles.imageContainer}>
+                                            <Image
+                                                source={{ uri: buildImageUrl(record.image_url) }}
+                                                style={styles.assessmentImage}
+                                                resizeMode="cover"
+                                            />
+                                        </View>
+                                    </View>
+                                )}
 
                                 {/* Questions and Answers */}
                                 <Text style={[styles.modalTitle, { marginBottom: 12, fontSize: 18 }]}>Assessment Questions & Answers</Text>

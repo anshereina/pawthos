@@ -4,11 +4,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createPainAssessment, createPainAssessmentWithImage } from '../../utils/painAssessments.utils';
+import VisualLandmarks from '../components/VisualLandmarks';
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F8FAFE',
+        backgroundColor: '#f7f7f7',
     },
     scrollView: {
         flex: 1,
@@ -28,72 +29,140 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 32,
     },
-    successIcon: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
-        backgroundColor: '#4CAF50',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginBottom: 16,
-        elevation: 8,
-        shadowColor: '#000',
-        shadowOpacity: 0.15,
-        shadowRadius: 12,
-        shadowOffset: { width: 0, height: 6 },
-    },
     headerTitle: {
-        fontSize: 24,
+        fontSize: 26,
         fontWeight: 'bold',
-        color: '#1A1A1A',
+        color: '#000',
         marginBottom: 8,
         textAlign: 'center',
     },
     headerSubtitle: {
         fontSize: 16,
-        color: 'rgba(26, 26, 26, 0.7)',
+        color: '#6b7280',
         textAlign: 'center',
+        fontFamily: 'Flink',
     },
     
-    // Results Card
-    resultsCard: {
-        backgroundColor: '#FFFFFF',
-        borderRadius: 20,
-        padding: 24,
+    // Image Section
+    imageSection: {
         width: '100%',
         marginBottom: 24,
-        elevation: 8,
+        position: 'relative',
+    },
+    fullImage: {
+        width: '100%',
+        height: undefined,
+        aspectRatio: 1,
+        resizeMode: 'contain',
+    },
+    landmarkDot: {
+        position: 'absolute',
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        backgroundColor: '#87CEEB',
+        alignItems: 'center',
+        justifyContent: 'center',
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.15,
-        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 4,
+        elevation: 5,
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+    },
+    
+    // Enhanced Results Card
+    resultsCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
+        padding: 16,
+        width: '100%',
+        marginBottom: 24,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
         position: 'relative',
         overflow: 'hidden',
     },
+    painLevelCard: {
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
+        padding: 16,
+        width: '100%',
+        marginBottom: 16,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    painLevelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
     resultsCardGradient: {
         position: 'absolute',
-        bottom: 0,
+        top: 0,
         left: 0,
         right: 0,
-        height: 4,
-        backgroundColor: '#4CAF50',
+        height: 6,
+        backgroundColor: '#3B82F6',
     },
     painLevelSection: {
         alignItems: 'center',
         marginBottom: 24,
     },
+    painLevelContainer: {
+        backgroundColor: 'rgba(59, 130, 246, 0.05)',
+        borderRadius: 20,
+        padding: 24,
+        width: '100%',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: 'rgba(59, 130, 246, 0.2)',
+        marginBottom: 16,
+    },
     painLevelLabel: {
         fontSize: 16,
-        color: 'rgba(26, 26, 26, 0.7)',
-        marginBottom: 8,
-        textAlign: 'center',
+        color: '#1F2937',
+        fontWeight: '600',
+        fontFamily: 'Jumper',
     },
     painLevelValue: {
-        fontSize: 24,
+        fontSize: 18,
         fontWeight: 'bold',
-        color: '#2196F3',
+        color: '#1E40AF',
+    },
+    painLevelSubtext: {
+        fontSize: 14,
+        color: '#6B7280',
         textAlign: 'center',
-        marginBottom: 16,
+        fontStyle: 'italic',
+    },
+    confidenceIndicator: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 12,
+        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.3)',
+    },
+    confidenceIcon: {
+        marginRight: 6,
+    },
+    confidenceText: {
+        fontSize: 12,
+        color: '#059669',
+        fontWeight: '600',
     },
     recommendationsSection: {
         width: '100%',
@@ -117,53 +186,59 @@ const styles = StyleSheet.create({
         marginBottom: 24,
     },
     primaryButton: {
-        backgroundColor: '#2196F3',
-        borderRadius: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        marginBottom: 12,
-        elevation: 4,
+        backgroundColor: '#045b26',
+        borderRadius: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        marginBottom: 8,
+        elevation: 1,
         shadowColor: '#000',
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 1 },
     },
     primaryButtonText: {
         color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
+        fontSize: 14,
+        fontWeight: '600',
         textAlign: 'center',
     },
     secondaryButton: {
-        backgroundColor: '#F3F4F6',
-        borderRadius: 16,
-        paddingVertical: 16,
-        paddingHorizontal: 24,
-        borderWidth: 1,
-        borderColor: '#E5E7EB',
-        marginBottom: 12,
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        marginBottom: 8,
+        elevation: 1,
+        shadowColor: '#000',
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 1 },
     },
     secondaryButtonText: {
-        color: '#6B7280',
-        fontSize: 16,
-        fontWeight: '600',
+        color: '#333',
+        fontSize: 14,
+        fontWeight: '500',
         textAlign: 'center',
     },
     
     // Disclaimer
     disclaimerCard: {
-        backgroundColor: 'rgba(255, 193, 7, 0.1)',
-        borderRadius: 12,
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
         padding: 16,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 193, 7, 0.3)',
         width: '100%',
         marginBottom: 24,
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
     },
     disclaimerTitle: {
         fontSize: 14,
         fontWeight: 'bold',
-        color: '#F57C00',
+        color: '#045b26',
         marginBottom: 8,
         textAlign: 'center',
     },
@@ -172,6 +247,239 @@ const styles = StyleSheet.create({
         color: 'rgba(26, 26, 26, 0.7)',
         textAlign: 'center',
         lineHeight: 16,
+    },
+    
+    // Enhanced comprehensive analysis styles
+    comprehensiveSection: {
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
+        padding: 16,
+        marginBottom: 16,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
+        position: 'relative',
+        overflow: 'hidden',
+    },
+    comprehensiveTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#045b26',
+        marginBottom: 16,
+        textAlign: 'center',
+    },
+    dropdownHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        backgroundColor: '#F8FAFE',
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#E5E7EB',
+    },
+    dropdownContent: {
+        marginTop: 12,
+        paddingHorizontal: 16,
+    },
+    fgsItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingVertical: 8,
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    fgsItemLast: {
+        borderBottomWidth: 0,
+    },
+    fgsLabel: {
+        fontSize: 14,
+        color: '#4A5568',
+        flex: 1,
+    },
+    fgsScore: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#2D3748',
+        minWidth: 30,
+        textAlign: 'center',
+    },
+    fgsDescription: {
+        fontSize: 12,
+        color: '#718096',
+        fontStyle: 'italic',
+        marginTop: 4,
+    },
+    explanationItem: {
+        marginBottom: 12,
+    },
+    explanationLabel: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#2D3748',
+        marginBottom: 4,
+    },
+    explanationText: {
+        fontSize: 13,
+        color: '#4A5568',
+        lineHeight: 18,
+    },
+    adviceItem: {
+        marginBottom: 16,
+        backgroundColor: 'rgba(16, 185, 129, 0.05)',
+        borderRadius: 12,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.1)',
+    },
+    adviceHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    adviceLabel: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        marginLeft: 8,
+    },
+    adviceList: {
+        marginLeft: 0,
+    },
+    adviceListItemContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 6,
+    },
+    adviceListItem: {
+        fontSize: 14,
+        color: '#374151',
+        lineHeight: 20,
+        marginLeft: 8,
+        flex: 1,
+    },
+    adviceText: {
+        fontSize: 14,
+        color: '#374151',
+        lineHeight: 20,
+    },
+    landmarkItem: {
+        marginBottom: 8,
+    },
+    landmarkLabel: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        color: '#2D3748',
+        marginBottom: 4,
+    },
+    landmarkText: {
+        fontSize: 13,
+        color: '#4A5568',
+        lineHeight: 18,
+    },
+    expandableSection: {
+        marginTop: 8,
+    },
+    expandButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderRadius: 8,
+        marginTop: 8,
+    },
+    expandButtonText: {
+        fontSize: 14,
+        color: '#3B82F6',
+        fontWeight: '600',
+        marginRight: 4,
+    },
+    
+    // Error Modal Styles
+    errorModalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1000,
+    },
+    errorModalBox: {
+        width: '90%',
+        maxWidth: 400,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 24,
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        shadowOffset: { width: 0, height: 5 },
+        elevation: 10,
+    },
+    errorModalIcon: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+    },
+    errorModalIconNoCat: {
+        backgroundColor: '#FFE5E5',
+    },
+    errorModalIconPosition: {
+        backgroundColor: '#FFF3CD',
+    },
+    errorModalTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#1A1A1A',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    errorModalMessage: {
+        fontSize: 16,
+        color: '#4A5568',
+        marginBottom: 16,
+        textAlign: 'center',
+        lineHeight: 22,
+    },
+    errorModalGuidance: {
+        fontSize: 14,
+        color: '#718096',
+        marginBottom: 20,
+        textAlign: 'center',
+        lineHeight: 20,
+        fontStyle: 'italic',
+    },
+    errorModalButton: {
+        backgroundColor: '#3B82F6',
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 24,
+        minWidth: 120,
+        alignItems: 'center',
+    },
+    errorModalButtonText: {
+        color: '#FFFFFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    errorModalCloseButton: {
+        position: 'absolute',
+        top: 12,
+        right: 12,
+        padding: 8,
     },
 });
 
@@ -184,6 +492,15 @@ interface IntegrationResultPageProps {
     petType?: string;
     severityLevel?: string;
     painLevel?: string;
+    // Enhanced comprehensive data from backend
+    fgsBreakdown?: any;
+    detailedExplanation?: any;
+    actionableAdvice?: any;
+    landmarkAnalysis?: any;
+    visualLandmarks?: any;
+    capturedImage?: string;
+    // Full API result for error handling
+    apiResult?: any;
 }
 
 export default function IntegrationResultPage({ 
@@ -194,7 +511,14 @@ export default function IntegrationResultPage({
     onTakeAnotherPicture,
     petType = 'cat', 
     severityLevel = 'Unknown',
-    painLevel 
+    painLevel,
+    fgsBreakdown,
+    detailedExplanation,
+    actionableAdvice,
+    landmarkAnalysis,
+    visualLandmarks,
+    capturedImage,
+    apiResult
 }: IntegrationResultPageProps) {
     
     // Use painLevel if provided, otherwise fall back to severityLevel
@@ -290,10 +614,82 @@ export default function IntegrationResultPage({
 
     const recommendations = getRecommendations(normalizedPainLevel, displayPetType);
     const resultImageSource = getResultImage(normalizedPainLevel);
+    
+    // Get pain level styling based on severity
+    const getPainLevelStyling = (level: string) => {
+        if (level === 'Level 0 (No Pain)' || level === 'Level 0' || level === 'No Pain') {
+            return {
+                containerColor: 'rgba(16, 185, 129, 0.05)',
+                borderColor: 'rgba(16, 185, 129, 0.3)',
+                textColor: '#059669',
+                confidenceColor: '#059669',
+                confidenceBg: 'rgba(16, 185, 129, 0.1)',
+                icon: 'check-circle'
+            };
+        } else if (level === 'Level 1 (Mild Pain)' || level === 'Level 1' || level === 'Mild Pain') {
+            return {
+                containerColor: 'rgba(245, 158, 11, 0.05)',
+                borderColor: 'rgba(245, 158, 11, 0.3)',
+                textColor: '#D97706',
+                confidenceColor: '#D97706',
+                confidenceBg: 'rgba(245, 158, 11, 0.1)',
+                icon: 'warning'
+            };
+        } else if (level === 'Level 2 (Moderate Pain)' || level === 'Level 2' || level === 'Moderate Pain') {
+            return {
+                containerColor: 'rgba(239, 68, 68, 0.05)',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                textColor: '#DC2626',
+                confidenceColor: '#DC2626',
+                confidenceBg: 'rgba(239, 68, 68, 0.1)',
+                icon: 'error'
+            };
+        } else {
+            return {
+                containerColor: 'rgba(239, 68, 68, 0.05)',
+                borderColor: 'rgba(239, 68, 68, 0.3)',
+                textColor: '#DC2626',
+                confidenceColor: '#DC2626',
+                confidenceBg: 'rgba(239, 68, 68, 0.1)',
+                icon: 'error'
+            };
+        }
+    };
+    
+    const painStyling = getPainLevelStyling(normalizedPainLevel);
+    
+    // Check for error types and show appropriate modal
+    React.useEffect(() => {
+        // Check if apiResult has error information
+        if (apiResult && apiResult.error_type) {
+            setErrorType(apiResult.error_type);
+            setErrorMessage(apiResult.error_message || 'An error occurred');
+            setErrorGuidance(apiResult.error_guidance || 'Please try again');
+            setShowErrorModal(true);
+        }
+        // Also check painLevel for backward compatibility
+        else if (painLevel && typeof painLevel === 'object' && painLevel.error_type) {
+            setErrorType(painLevel.error_type);
+            setErrorMessage(painLevel.error_message || 'An error occurred');
+            setErrorGuidance(painLevel.error_guidance || 'Please try again');
+            setShowErrorModal(true);
+        }
+    }, [apiResult, painLevel]);
     const [isSaved, setIsSaved] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveChoice, setSaveChoice] = useState<'yes' | 'no' | null>(null);
     const [petRegistered, setPetRegistered] = useState<'yes' | 'no' | null>(null);
+    
+    // Enhanced comprehensive analysis state
+    const [showFGSBreakdown, setShowFGSBreakdown] = useState(false);
+    const [showActionableAdvice, setShowActionableAdvice] = useState(false);
+    const [showLandmarkAnalysis, setShowLandmarkAnalysis] = useState(false);
+    
+    // Error modal state
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const [errorType, setErrorType] = useState<string>('');
+    const [errorMessage, setErrorMessage] = useState<string>('');
+    const [errorGuidance, setErrorGuidance] = useState<string>('');
 
     // Read pet_registered flag from storage
     React.useEffect(() => {
@@ -328,22 +724,34 @@ export default function IntegrationResultPage({
                     console.log('Full assessment data:', assessmentData);
                     console.log('Basic answers:', assessmentData.basic_answers);
                     console.log('Assessment answers:', assessmentData.assessment_answers);
+                    console.log('Captured image from props:', capturedImage);
+                    console.log('Existing image_url in assessment data:', assessmentData?.image_url);
                     
                     // Update the assessment data with final results
                     assessmentData.recommendations = recommendations;
                     assessmentData.pain_level = currentPainLevel;
                     
+                    // Use capturedImage if available, otherwise use existing image_url
+                    const imageToUse = capturedImage || assessmentData?.image_url;
+                    console.log('=== IMAGE HANDLING DEBUG ===');
+                    console.log('Image to use:', imageToUse);
+                    console.log('Image URL string:', String(imageToUse || ''));
+                    
                     // Check if image_url is already a server URL or local file path
                     let result;
-                    const imageUrlString = String(assessmentData?.image_url || '');
+                    const imageUrlString = String(imageToUse || '');
                     if (imageUrlString.startsWith('file://')) {
                         // Local file path - upload via multipart endpoint
+                        console.log('Using multipart upload for local file');
                         result = await createPainAssessmentWithImage(assessmentData, imageUrlString);
-                    } else if (imageUrlString.startsWith('/uploads/')) {
+                    } else if (imageUrlString.startsWith('/uploads/') || imageUrlString.startsWith('http')) {
                         // Already a server URL - create via JSON
+                        console.log('Using JSON upload with server URL:', imageUrlString);
+                        assessmentData.image_url = imageUrlString;
                         result = await createPainAssessment(assessmentData);
                     } else {
                         // No image or unknown format - create via JSON
+                        console.log('Using JSON upload without image');
                         result = await createPainAssessment(assessmentData);
                     }
 
@@ -404,31 +812,152 @@ export default function IntegrationResultPage({
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Error Modal */}
+            {showErrorModal && (
+                <View style={styles.errorModalOverlay}>
+                    <View style={styles.errorModalBox}>
+                        <TouchableOpacity 
+                            style={styles.errorModalCloseButton}
+                            onPress={() => setShowErrorModal(false)}
+                        >
+                            <MaterialIcons name="close" size={24} color="#9CA3AF" />
+                        </TouchableOpacity>
+                        
+                        <View style={[
+                            styles.errorModalIcon,
+                            errorType === 'NO_CAT_DETECTED' ? styles.errorModalIconNoCat : styles.errorModalIconPosition
+                        ]}>
+                            <MaterialIcons 
+                                name={errorType === 'NO_CAT_DETECTED' ? 'pets' : 'camera-alt'} 
+                                size={40} 
+                                color={errorType === 'NO_CAT_DETECTED' ? '#EF4444' : '#F59E0B'} 
+                            />
+                        </View>
+                        
+                        <Text style={styles.errorModalTitle}>
+                            {errorType === 'NO_CAT_DETECTED' ? 'No Cat Detected' : 'Cat Position Issue'}
+                        </Text>
+                        
+                        <Text style={styles.errorModalMessage}>
+                            {errorMessage}
+                        </Text>
+                        
+                        <Text style={styles.errorModalGuidance}>
+                            {errorGuidance}
+                        </Text>
+                        
+                        <TouchableOpacity 
+                            style={styles.errorModalButton}
+                            onPress={() => setShowErrorModal(false)}
+                        >
+                            <Text style={styles.errorModalButtonText}>Try Again</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            )}
+            
             <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
                     {/* Header Section */}
                     <View style={styles.headerSection}>
-                        <View style={styles.successIcon}>
-                            <MaterialIcons name="check" size={40} color="#FFFFFF" />
-                        </View>
-                        <Text style={styles.headerTitle}>Assessment Complete</Text>
-                        <Text style={styles.headerSubtitle}>AI analysis finished successfully</Text>
+                        <Text style={styles.headerTitle}>Pain Assessment Results</Text>
+                        <Text style={styles.headerSubtitle}>AI analysis completed successfully</Text>
                     </View>
 
-                    {/* Results Card */}
-                    <View style={styles.resultsCard}>
-                        <View style={styles.painLevelSection}>
-                            <Text style={styles.painLevelLabel}>Your {displayPetType}'s assessed pain level:</Text>
-                            <Text style={styles.painLevelValue}>{normalizedPainLevel}</Text>
+                    {/* Picture with Dots */}
+                    {capturedImage && (
+                        <View style={styles.imageSection}>
+                            <VisualLandmarks 
+                                imageUri={capturedImage}
+                                landmarks={visualLandmarks || {}}
+                                fgsBreakdown={fgsBreakdown}
+                            />
                         </View>
-                        
-                        <View style={styles.recommendationsSection}>
-                            <Text style={styles.recommendationsTitle}>Recommendations</Text>
+                    )}
+
+                    {/* Pain Level */}
+                    <View style={[
+                        styles.painLevelCard,
+                        {
+                            backgroundColor: painStyling.containerColor,
+                            borderColor: painStyling.borderColor,
+                        }
+                    ]}>
+                        <View style={styles.painLevelRow}>
+                            <Text style={styles.painLevelLabel}>Pain Level:</Text>
+                            <Text style={[
+                                styles.painLevelValue,
+                                { color: painStyling.textColor }
+                            ]}>{normalizedPainLevel}</Text>
+                        </View>
+                        <View style={[styles.resultsCardGradient, { backgroundColor: painStyling.textColor }]} />
+                    </View>
+
+                    {/* Recommendations */}
+                    {actionableAdvice ? (
+                        <View style={styles.comprehensiveSection}>
+                            <Text style={styles.comprehensiveTitle}>💡 Recommendations</Text>
+                            
+                            {actionableAdvice.immediate_actions && (
+                                <View style={styles.adviceItem}>
+                                    <View style={styles.adviceHeader}>
+                                        <MaterialIcons name="flash-on" size={20} color="#045b26" />
+                                        <Text style={[styles.adviceLabel, { color: '#045b26' }]}>Immediate Actions</Text>
+                                    </View>
+                                    <View style={styles.adviceList}>
+                                        {actionableAdvice.immediate_actions.map((action: string, index: number) => (
+                                            <View key={index} style={styles.adviceListItemContainer}>
+                                                <MaterialIcons name="check-circle" size={16} color="#045b26" />
+                                                <Text style={styles.adviceListItem}>{action}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
+                            
+                            {actionableAdvice.monitoring_guidelines && (
+                                <View style={styles.adviceItem}>
+                                    <View style={styles.adviceHeader}>
+                                        <MaterialIcons name="visibility" size={20} color="#045b26" />
+                                        <Text style={[styles.adviceLabel, { color: '#045b26' }]}>Monitoring Guidelines</Text>
+                                    </View>
+                                    <Text style={styles.adviceText}>{actionableAdvice.monitoring_guidelines}</Text>
+                                </View>
+                            )}
+                            
+                            {actionableAdvice.when_to_contact_vet && (
+                                <View style={styles.adviceItem}>
+                                    <View style={styles.adviceHeader}>
+                                        <MaterialIcons name="local-hospital" size={20} color="#045b26" />
+                                        <Text style={[styles.adviceLabel, { color: '#045b26' }]}>When to Contact Vet</Text>
+                                    </View>
+                                    <Text style={styles.adviceText}>{actionableAdvice.when_to_contact_vet}</Text>
+                                </View>
+                            )}
+                            
+                            {actionableAdvice.home_care_tips && (
+                                <View style={styles.adviceItem}>
+                                    <View style={styles.adviceHeader}>
+                                        <MaterialIcons name="home" size={20} color="#045b26" />
+                                        <Text style={[styles.adviceLabel, { color: '#045b26' }]}>Home Care Tips</Text>
+                                    </View>
+                                    <View style={styles.adviceList}>
+                                        {actionableAdvice.home_care_tips.map((tip: string, index: number) => (
+                                            <View key={index} style={styles.adviceListItemContainer}>
+                                                <MaterialIcons name="star" size={16} color="#045b26" />
+                                                <Text style={styles.adviceListItem}>{tip}</Text>
+                                            </View>
+                                        ))}
+                                    </View>
+                                </View>
+                            )}
+                        </View>
+                    ) : (
+                        <View style={styles.comprehensiveSection}>
+                            <Text style={styles.comprehensiveTitle}>💡 Recommendations</Text>
                             <Text style={styles.recommendationsText}>{recommendations}</Text>
                         </View>
-                        
-                        <View style={styles.resultsCardGradient} />
-                    </View>
+                    )}
 
                     {/* Disclaimer */}
                     <View style={styles.disclaimerCard}>

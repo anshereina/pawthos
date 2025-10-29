@@ -375,21 +375,21 @@ export default function PetMedRecordsPage({ onNavigate, petId }: { onNavigate: (
 
             const rowsHtml = (medicalRecords || []).map(r => `
                 <tr>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${r.reason_for_visit}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${medicalRecordsAPI.formatDate(r.date_visited)}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${r.date_of_next_visit ? medicalRecordsAPI.formatDate(r.date_of_next_visit) : 'N/A'}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">See Details</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.reason_for_visit}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${medicalRecordsAPI.formatDate(r.date_visited)}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.date_of_next_visit ? medicalRecordsAPI.formatDate(r.date_of_next_visit) : 'N/A'}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">See Details</td>
                 </tr>
             `).join('');
 
             const tableHtml = `
-                <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
                     <thead>
                         <tr style="background:#e0ffe6;color:#045b26;">
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Reason for Visit</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Date Visited</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Date of Next Visit</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Procedures / Details</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:30%;word-wrap:break-word;">Reason for Visit</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Date Visited</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Date of Next Visit</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:30%;word-wrap:break-word;">Procedures / Details</th>
                         </tr>
                     </thead>
                     <tbody>

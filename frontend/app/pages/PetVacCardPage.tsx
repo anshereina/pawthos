@@ -379,23 +379,23 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
 
             const rowsHtml = (vaccinationRecords || []).map(r => `
                 <tr>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${formatDate(r.vaccination_date)}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${r.vaccine_name}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${r.batch_lot_no || 'N/A'}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${r.expiration_date ? formatDate(r.expiration_date) : 'N/A'}</td>
-                    <td style="padding:8px;border:1px solid #f0f0f0;">${r.veterinarian || 'N/A'}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${formatDate(r.vaccination_date)}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.vaccine_name}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.batch_lot_no || 'N/A'}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.expiration_date ? formatDate(r.expiration_date) : 'N/A'}</td>
+                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.veterinarian || 'N/A'}</td>
                 </tr>
             `).join('');
 
             const tableHtml = `
-                <table style="width:100%;border-collapse:collapse;font-size:11px;">
+                <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
                     <thead>
                         <tr style="background:#e0ffe6;color:#045b26;">
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Date of Vaccination</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Vaccine Used</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Lot No./ Batch No.</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Date of next Vaccination</th>
-                            <th style="padding:8px;border:1px solid #d9f2dc;">Vet. Lic No. PTR</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Date of Vaccination</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:25%;word-wrap:break-word;">Vaccine Used</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Lot No./ Batch No.</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Date of next Vaccination</th>
+                            <th style="padding:10px;border:1px solid #d9f2dc;width:15%;word-wrap:break-word;">Vet. Lic No. PTR</th>
                         </tr>
                     </thead>
                     <tbody>

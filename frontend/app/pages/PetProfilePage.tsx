@@ -115,9 +115,11 @@ const styles = StyleSheet.create({
     filterTab: {
         flex: 1,
         paddingVertical: 12,
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         borderRadius: 8,
+        flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
     },
     filterTabActive: {
         backgroundColor: '#045b26',
@@ -125,16 +127,33 @@ const styles = StyleSheet.create({
     filterTabInactive: {
         backgroundColor: 'transparent',
     },
+    filterTabLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
     filterText: {
         fontSize: 14,
         fontWeight: '600',
         fontFamily: 'Jumper',
+        marginLeft: 8,
     },
     filterTextActive: {
         color: '#FFFFFF',
     },
     filterTextInactive: {
         color: '#666',
+    },
+    filterCount: {
+        fontSize: 14,
+        fontWeight: 'bold',
+        marginLeft: 8,
+    },
+    filterCountActive: {
+        color: '#FFFFFF',
+    },
+    filterCountInactive: {
+        color: '#045b26',
     },
     // Pet Cards
     petsContainer: {
@@ -518,34 +537,9 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                         )}
                     </View>
 
-                    {/* Quick Stats */}
-                    <View style={styles.statsContainer}>
-                        <Text style={styles.statsTitle}>
-                            {displayStats.isFiltered ? `Search Results${searchQuery ? ` for "${searchQuery}"` : ''}` : 'Pet Overview'}
-                        </Text>
-                        <View style={styles.statsRow}>
-                            <View style={styles.statCard}>
-                                <MaterialCommunityIcons name="paw" size={24} color="#045b26" style={styles.statIcon} />
-                                <Text style={styles.statNumber}>{displayStats.total}</Text>
-                                <Text style={styles.statLabel}>
-                                    {displayStats.isFiltered ? 'Found' : 'Total Pets'}
-                                </Text>
-                            </View>
-                            <View style={styles.statCard}>
-                                <MaterialCommunityIcons name="cat" size={24} color="#045b26" style={styles.statIcon} />
-                                <Text style={styles.statNumber}>{displayStats.cats}</Text>
-                                <Text style={styles.statLabel}>Cats</Text>
-                            </View>
-                            <View style={styles.statCard}>
-                                <MaterialCommunityIcons name="dog" size={24} color="#045b26" style={styles.statIcon} />
-                                <Text style={styles.statNumber}>{displayStats.dogs}</Text>
-                                <Text style={styles.statLabel}>Dogs</Text>
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Filter Tabs */}
+                    {/* Filter Tabs with Counts */}
                     <View style={styles.filterContainer}>
+                        {/* All Pets Tab */}
                         <TouchableOpacity 
                             style={[
                                 styles.filterTab, 
@@ -553,13 +547,28 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                             ]}
                             onPress={() => handleTabPress('All')}
                         >
+                            <View style={styles.filterTabLeft}>
+                                <MaterialCommunityIcons 
+                                    name="paw" 
+                                    size={20} 
+                                    color={activeFilter === 'All' ? '#FFFFFF' : '#045b26'} 
+                                />
+                                <Text style={[
+                                    styles.filterText, 
+                                    activeFilter === 'All' ? styles.filterTextActive : styles.filterTextInactive
+                                ]}>
+                                    All
+                                </Text>
+                            </View>
                             <Text style={[
-                                styles.filterText, 
-                                activeFilter === 'All' ? styles.filterTextActive : styles.filterTextInactive
+                                styles.filterCount,
+                                activeFilter === 'All' ? styles.filterCountActive : styles.filterCountInactive
                             ]}>
-                                All
+                                {displayStats.total}
                             </Text>
                         </TouchableOpacity>
+                        
+                        {/* Cats Tab */}
                         <TouchableOpacity 
                             style={[
                                 styles.filterTab, 
@@ -567,13 +576,28 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                             ]}
                             onPress={() => handleTabPress('Cats')}
                         >
+                            <View style={styles.filterTabLeft}>
+                                <MaterialCommunityIcons 
+                                    name="cat" 
+                                    size={20} 
+                                    color={activeFilter === 'Cats' ? '#FFFFFF' : '#045b26'} 
+                                />
+                                <Text style={[
+                                    styles.filterText, 
+                                    activeFilter === 'Cats' ? styles.filterTextActive : styles.filterTextInactive
+                                ]}>
+                                    Cats
+                                </Text>
+                            </View>
                             <Text style={[
-                                styles.filterText, 
-                                activeFilter === 'Cats' ? styles.filterTextActive : styles.filterTextInactive
+                                styles.filterCount,
+                                activeFilter === 'Cats' ? styles.filterCountActive : styles.filterCountInactive
                             ]}>
-                                Cats
+                                {displayStats.cats}
                             </Text>
                         </TouchableOpacity>
+                        
+                        {/* Dogs Tab */}
                         <TouchableOpacity 
                             style={[
                                 styles.filterTab, 
@@ -581,11 +605,24 @@ export default function PetProfilePage({ onNavigate }: { onNavigate: (page: stri
                             ]}
                             onPress={() => handleTabPress('Dogs')}
                         >
+                            <View style={styles.filterTabLeft}>
+                                <MaterialCommunityIcons 
+                                    name="dog" 
+                                    size={20} 
+                                    color={activeFilter === 'Dogs' ? '#FFFFFF' : '#045b26'} 
+                                />
+                                <Text style={[
+                                    styles.filterText, 
+                                    activeFilter === 'Dogs' ? styles.filterTextActive : styles.filterTextInactive
+                                ]}>
+                                    Dogs
+                                </Text>
+                            </View>
                             <Text style={[
-                                styles.filterText, 
-                                activeFilter === 'Dogs' ? styles.filterTextActive : styles.filterTextInactive
+                                styles.filterCount,
+                                activeFilter === 'Dogs' ? styles.filterCountActive : styles.filterCountInactive
                             ]}>
-                                Dogs
+                                {displayStats.dogs}
                             </Text>
                         </TouchableOpacity>
                     </View>

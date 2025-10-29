@@ -240,11 +240,6 @@ export default function PainAssessmentPage({ onNavigate }: { onNavigate: (page: 
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header and Title */}
-            <View style={styles.header}>
-                <Text style={styles.title}>Pain Assessment History</Text>
-            </View>
-
             <ScrollView 
                 style={styles.content}
                 refreshControl={

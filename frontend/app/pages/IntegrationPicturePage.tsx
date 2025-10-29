@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, Modal, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Image, Modal, Pressable, Alert, Animated, ActivityIndicator } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -197,6 +197,54 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 6,
   },
+  // Enhanced Upload Modal Styles
+  uploadModal: {
+    width: 360,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+    elevation: 8,
+  },
+  uploadIconContainer: {
+    marginBottom: 16,
+  },
+  uploadIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: '#f0f8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#045b26',
+  },
+  uploadTitle: {
+    color: '#045b26',
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  progressContainer: {
+    width: '100%',
+    marginTop: 20,
+  },
+  progressBar: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#045b26',
+    borderRadius: 4,
+  },
   scanTitle: {
     color: '#045b26',
     fontSize: 16,
@@ -309,6 +357,13 @@ export default function IntegrationPicturePage({ onResult, onStartScan, onBack }
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedPetType, setSelectedPetType] = useState<string>('');
+  const [isCheckingImage, setIsCheckingImage] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Animation refs
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const rotateAnim = useRef(new Animated.Value(0)).current;
+  const progressAnim = useRef(new Animated.Value(0)).current;
 
   // Debug log to verify new design is loaded
   console.log('IntegrationPicturePage: New design loaded with Do\'s and Don\'ts');
@@ -332,20 +387,180 @@ export default function IntegrationPicturePage({ onResult, onStartScan, onBack }
     })();
   }, []);
 
-  // No uploads or analysis here; scanning happens on a dedicated page
+  // Animation effects for upload modal
+  useEffect(() => {
+    if (isCheckingImage) {
+      // Start animations
+      const pulseLoop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, { toValue: 1.2, duration: 1000, useNativeDriver: true }),
+          Animated.timing(pulseAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
+        ])
+      );
+      
+      const rotateLoop = Animated.loop(
+        Animated.timing(rotateAnim, { toValue: 1, duration: 2000, useNativeDriver: true })
+      );
+
+      pulseLoop.start();
+      rotateLoop.start();
+
+      return () => {
+        pulseLoop.stop();
+        rotateLoop.stop();
+      };
+    }
+  }, [isCheckingImage]);
+
+  // Progress animation
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: uploadProgress,
+      duration: 300,
+      useNativeDriver: false
+    }).start();
+  }, [uploadProgress]);
+
+  // Check if the selected image contains a cat
+  const checkForCatImage = async (imageUri: string) => {
+    console.log('🔍 checkForCatImage called with URI:', imageUri);
+    try {
+      console.log('⏳ Starting cat detection process...');
+      setIsCheckingImage(true);
+      setUploadProgress(0);
+      
+      // Simulate realistic upload progress
+      setTimeout(() => {
+        setUploadProgress(15);
+      }, 500);
+      
+      setTimeout(() => {
+        setUploadProgress(35);
+      }, 1200);
+      
+      setTimeout(() => {
+        setUploadProgress(60);
+      }, 2000);
+      
+      const token = await getAuthToken();
+      console.log('🔑 Auth token retrieved:', token ? 'Present' : 'Missing');
+      if (!token) {
+        console.log('❌ No auth token found');
+        setErrorMessage('Authentication required. Please log in again.');
+        setErrorModalVisible(true);
+        setIsCheckingImage(false);
+        return;
+      }
+
+      setTimeout(() => {
+        setUploadProgress(80);
+      }, 3000);
+
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageUri,
+        name: 'cat_photo.jpg',
+        type: 'image/jpeg',
+      } as any);
+
+      console.log('📤 FormData created, making API call to:', `${API_BASE_URL}/predict-eld`);
+
+      setTimeout(() => {
+        setUploadProgress(95);
+      }, 4000);
+
+      const response = await fetch(`${API_BASE_URL}/predict-eld`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      console.log('📡 API response status:', response.status);
+      console.log('📡 API response ok:', response.ok);
+
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          const errorText = await response.text();
+        // Hide technical error details from user
+        const userFriendlyMessage = `Failed to analyze image\n\nPlease try again with a different photo.\n\nMake sure:\n• The image is clear and well-lit\n• The cat's face is visible\n• The file is not corrupted`;
+        setErrorMessage(userFriendlyMessage);
+        setErrorModalVisible(true);
+        setIsCheckingImage(false);
+        return;
+        }
+        
+        // Hide technical error details from user
+        
+        // Handle specific error types (400 status with error object)
+        if (response.status === 400 && errorData.error && errorData.error_type) {
+          // Cat detection failed - show user-friendly message
+          const userFriendlyMessage = `No cat face detected in the image\n\nPlease upload a clear photo of a cat's face for pain assessment.\n\nTips:\n• Make sure the cat's face is clearly visible\n• Take the photo in good lighting\n• Ensure the cat is calm and facing the camera`;
+          setErrorMessage(userFriendlyMessage);
+          setErrorModalVisible(true);
+          setIsCheckingImage(false);
+          return;
+        }
+        
+        // Handle other error types
+        if (response.status === 422 && errorData.error_type) {
+          setErrorMessage(errorData.message || 'Image analysis failed');
+          setErrorModalVisible(true);
+          setIsCheckingImage(false);
+          return;
+        }
+        
+        const userFriendlyMessage = `Failed to analyze image\n\nPlease try again with a different photo.\n\nMake sure:\n• The image is clear and well-lit\n• The cat's face is visible\n• The file is not corrupted`;
+        setErrorMessage(userFriendlyMessage);
+        setErrorModalVisible(true);
+        setIsCheckingImage(false);
+        return;
+      }
+
+      const result = await response.json();
+      // Cat detected successfully, proceed to scanning
+      
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        setIsCheckingImage(false);
+        onStartScan(imageUri);
+      }, 800);
+      
+    } catch (error) {
+      // Hide technical error details from user
+      setUploadProgress(100);
+      
+      setTimeout(() => {
+        const userFriendlyMessage = `Network error\n\nPlease check your internet connection and try again.\n\nIf the problem persists:\n• Restart the app\n• Check your network connection\n• Try a different image`;
+        setErrorMessage(userFriendlyMessage);
+        setErrorModalVisible(true);
+        setIsCheckingImage(false);
+      }, 500);
+    }
+  };
 
   const handleImageSelection = async (source: 'camera' | 'library') => {
+    console.log('🔄 Starting image selection:', source);
+    console.log('📷 Camera permission:', hasPermission);
+    
     if (source === 'camera' && hasPermission === null) {
+      console.log('❌ Camera permission is null');
       alert('Camera permission is required to take photos.');
       return;
     }
     
     if (source === 'camera' && hasPermission === false) {
+      console.log('❌ Camera permission denied');
       alert('Camera permission is required to take photos.');
       return;
     }
 
-    // No inline scanning; navigation to scanning screen
+    console.log('✅ Permissions OK, proceeding with image selection');
 
     try {
       const options = {
@@ -354,12 +569,26 @@ export default function IntegrationPicturePage({ onResult, onStartScan, onBack }
         quality: 1.0, // keep highest quality to aid detection
       } as any;
 
+      console.log('📸 Launching image picker with options:', options);
+      
       const result = source === 'camera' 
         ? await ImagePicker.launchCameraAsync(options)
         : await ImagePicker.launchImageLibraryAsync(options);
 
+      console.log('📸 Image picker result:', {
+        canceled: result.canceled,
+        hasAssets: result.assets && result.assets.length > 0,
+        assetsLength: result.assets?.length || 0
+      });
+
       if (!result.canceled && result.assets && result.assets[0]) {
         const photo = result.assets[0];
+        console.log('📷 Photo selected:', {
+          uri: photo.uri,
+          width: photo.width,
+          height: photo.height,
+          type: photo.type
+        });
 
         const formData = new FormData();
         formData.append('file', {
@@ -368,35 +597,46 @@ export default function IntegrationPicturePage({ onResult, onStartScan, onBack }
             type: 'image/jpeg',
         } as any);
 
-                    console.log('Sending image:', `${API_BASE_URL}/predict-eld`);
-        console.log('Image URI:', photo.uri);
-        console.log('Selected pet type:', selectedPetType);
-        console.log('API_BASE_URL:', API_BASE_URL);
+        // Preparing image for analysis
+
+        // Re-read pet type from AsyncStorage to ensure we have the latest value
+        let currentPetType = selectedPetType;
+        try {
+          const assessmentDataString = await AsyncStorage.getItem('currentAssessmentData');
+          
+          if (assessmentDataString) {
+            const assessmentData = JSON.parse(assessmentDataString);
+            currentPetType = assessmentData.pet_type || '';
+          }
+        } catch (error) {
+          // Handle pet type validation silently
+        }
 
         // Validate that we're processing the correct pet type
-        const normalizedPetType = selectedPetType?.toUpperCase();
-        console.log('Normalized pet type:', normalizedPetType);
+        const normalizedPetType = (currentPetType || '').toString().trim().toUpperCase();
         
-        if (normalizedPetType === 'CAT') {
-          console.log('Processing cat image for pain assessment...');
-        } else if (normalizedPetType === 'DOG') {
-          console.log('Processing dog image - this should not happen in cat assessment flow');
+        // More flexible matching - accepts CAT, FELINE, or anything with CAT in it
+        if (normalizedPetType.includes('CAT') || normalizedPetType.includes('FELINE')) {
+          // Processing cat image for pain assessment
+        } else if (normalizedPetType.includes('DOG') || normalizedPetType.includes('CANINE')) {
           setErrorMessage('You selected DOG but this is the cat assessment flow. Please go back and select CAT.');
           setErrorModalVisible(true);
           return;
         } else {
-          console.log('Unknown pet type:', selectedPetType, '(normalized:', normalizedPetType, ')');
-          setErrorMessage('Pet type not recognized. Please go back and select CAT or DOG.');
+          setErrorMessage(`Pet type not recognized: "${currentPetType}". Please go back and select CAT or DOG.`);
           setErrorModalVisible(true);
           return;
         }
-        // Navigate to scanning page and let it handle processing
         
-        onStartScan(photo.uri);
+        // Check if the image contains a cat before proceeding to scanning
+        console.log('🔍 Starting cat detection for image:', photo.uri);
+        await checkForCatImage(photo.uri);
         return;
+      } else {
+        console.log('❌ Image selection canceled or no assets');
       }
     } catch (error) {
-      console.error('Image selection error:', error);
+      console.error('❌ Image selection error:', error);
       setErrorMessage('Failed to select image. Please try again.');
       setErrorModalVisible(true);
     }
@@ -411,6 +651,38 @@ export default function IntegrationPicturePage({ onResult, onStartScan, onBack }
 
   return (
     <SafeAreaView style={styles.container}>
+      {isCheckingImage && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.uploadModal}>
+            {/* Animated Upload Icon */}
+            <Animated.View style={[styles.uploadIconContainer, { transform: [{ scale: pulseAnim }] }]}>
+              <Animated.View style={[styles.uploadIcon, { 
+                transform: [{ 
+                  rotate: rotateAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '360deg']
+                  })
+                }] 
+              }]}>
+                <MaterialIcons name="cloud-upload" size={40} color="#045b26" />
+              </Animated.View>
+            </Animated.View>
+            
+            {/* Upload Title */}
+            <Text style={styles.uploadTitle}>Uploading to Server</Text>
+            
+            {/* Progress Bar */}
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBar}>
+                <Animated.View style={[styles.progressFill, { width: progressAnim.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['0%', '100%']
+                }) }]} />
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Intro */}
         <View style={styles.introCard}>

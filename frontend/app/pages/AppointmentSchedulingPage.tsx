@@ -37,7 +37,6 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         color: '#fff',
-        fontFamily: 'Jumper',
         letterSpacing: 0.5,
     },
     navigationArrows: {
@@ -58,7 +57,6 @@ const styles = StyleSheet.create({
         color: 'rgba(255, 255, 255, 0.9)',
         fontSize: 16,
         fontWeight: '600',
-        fontFamily: 'Jumper',
         letterSpacing: 0.3,
     },
     calendarGrid: {
@@ -76,7 +74,6 @@ const styles = StyleSheet.create({
         color: '#fff',
         fontSize: 16,
         fontWeight: '600',
-        fontFamily: 'Jumper',
     },
     formContainer: {
         backgroundColor: '#fff',
@@ -470,7 +467,14 @@ export default function AppointmentSchedulingPage({ initialAppointmentType, onBa
                 time: selectedTime,
                 veterinarian: 'Dr. Smith', // Default veterinarian, you can add selection later
                 notes: description,
-                location: 'Main Clinic' // Default location, you can add selection later
+                // Pet details
+                pet_name: selectedPet?.name,
+                pet_species: selectedPet?.species,
+                pet_breed: selectedPet?.breed,
+                pet_age: calculateAge(selectedPet?.date_of_birth),
+                pet_gender: selectedPet?.gender,
+                pet_weight: selectedPet?.weight?.toString(),
+                owner_name: selectedPet?.owner_name
             };
 
             console.log('Creating appointment with data:', appointmentData);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList, ActivityIndicator, Alert, Modal, ScrollView, Animated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, FlatList, ActivityIndicator, Alert, Modal, ScrollView, Animated, RefreshControl } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import AppointmentDetailsModal from '../modals/AppointmentDetailsModal';
 import { getAppointments, updateAppointmentStatus, filterUpcomingAppointments, getAllAppointments, formatAppointmentDate, formatAppointmentTime, AppointmentData } from '../../utils/appointments.utils';
@@ -153,7 +153,6 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#045b26',
-        fontFamily: 'Jumper',
     },
     statusBadge: {
         paddingHorizontal: 12,
@@ -466,7 +465,18 @@ export default function AppointmentPage({ onNavigate }: { onNavigate: (page: str
             </View>
 
             <Animated.View style={{ flex: 1, opacity: enterOpacity, transform: [{ translateY: enterTranslateY }] }}>
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView 
+                style={styles.content} 
+                showsVerticalScrollIndicator={false}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#045b26']}
+                        tintColor="#045b26"
+                    />
+                }
+            >
                 {/* Search Bar */}
                 <View style={styles.searchBar}>
                     <MaterialIcons name="search" size={20} color="#888888" />
@@ -572,11 +582,26 @@ export default function AppointmentPage({ onNavigate }: { onNavigate: (page: str
                                     <View style={styles.appointmentDetails}>
                                         <Text style={styles.appointmentType}>{item.type}</Text>
                                         <Text style={styles.appointmentTime}>
-                                            {formatAppointmentTime(item.date)}
+                                            Time: {item.time || 'N/A'}
                                         </Text>
                                         <Text style={styles.appointmentPet}>
                                             Pet: {item.pet_name || 'N/A'}
                                         </Text>
+                                        {item.pet_species && (
+                                            <Text style={styles.appointmentPet}>
+                                                Species: {item.pet_species}
+                                            </Text>
+                                        )}
+                                        {item.pet_breed && (
+                                            <Text style={styles.appointmentPet}>
+                                                Breed: {item.pet_breed}
+                                            </Text>
+                                        )}
+                                        {item.owner_name && (
+                                            <Text style={styles.appointmentPet}>
+                                                Owner: {item.owner_name}
+                                            </Text>
+                                        )}
                                     </View>
                                     {canModifyAppointment(item.status) && (
                                         <View style={styles.appointmentActions}>

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Alert, ActivityIndicat
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { getUserProfile, getCurrentUser, updateStoredUser, isAuthenticated, updateUserProfile } from '../../utils/auth.utils';
 import EditProfileModal from '../modals/EditProfileModal';
+import { API_BASE_URL } from '../../utils/config';
 
 const { width } = Dimensions.get('window');
 
@@ -241,7 +242,11 @@ const styles = StyleSheet.create({
     },
 });
 
-export default function MyAccountPage() {
+interface MyAccountPageProps {
+    onUserDataUpdate?: () => void;
+}
+
+export default function MyAccountPage({ onUserDataUpdate }: MyAccountPageProps = {}) {
     const [userData, setUserData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -310,20 +315,46 @@ export default function MyAccountPage() {
         try {
             setUpdating(true);
             
+            console.log('Updating profile with data:', updatedData);
+            
             // Call the API to update the profile
             const result = await updateUserProfile(updatedData);
             
+            console.log('Update result:', result);
+            
             if (result.success) {
-                // Update local storage and state
-                const updatedUserData = { ...userData, ...updatedData };
-                await updateStoredUser(updatedUserData);
-                setUserData(updatedUserData);
+                // The updateUserProfile function already stores the updated data
+                // Now just fetch it to update the UI
+                console.log('✅ Profile update successful!');
+                console.log('📸 Updated user from result:', JSON.stringify(result.user, null, 2));
+                
+                if (result.user) {
+                    // Use the user data returned from the update API
+                    console.log('🔄 Setting userData with photo_url:', result.user.photo_url);
+                    setUserData(result.user);
+                } else {
+                    // Fallback: fetch fresh data from the server
+                    console.log('⚠️ No user in result, fetching fresh data...');
+                    const freshUserData = await getCurrentUser();
+                    console.log('📥 Fresh user data:', JSON.stringify(freshUserData, null, 2));
+                    
+                    if (freshUserData) {
+                        setUserData(freshUserData);
+                    }
+                }
+                
+                // Notify parent component to refresh its user data (for header, etc.)
+                if (onUserDataUpdate) {
+                    console.log('🔔 Calling onUserDataUpdate to refresh parent component');
+                    onUserDataUpdate();
+                }
                 
                 // Close modal
                 setEditModalVisible(false);
                 
                 Alert.alert('Success', 'Profile updated successfully!');
             } else {
+                console.log('❌ Profile update failed:', result.message);
                 Alert.alert('Error', result.message || 'Failed to update profile');
             }
         } catch (error) {
@@ -388,9 +419,30 @@ export default function MyAccountPage() {
                         <View style={styles.avatarContainer}>
                             {userData?.photo_url ? (
                                 <Image 
-                                    source={{ uri: userData.photo_url }} 
+                                    key={userData.photo_url}
+                                    source={{ 
+                                        uri: (() => {
+                                            const baseUrl = userData.photo_url.startsWith('http') 
+                                                ? userData.photo_url 
+                                                : `${API_BASE_URL.replace('/api', '')}${userData.photo_url}`;
+                                            const finalUrl = baseUrl + `?t=${Date.now()}`;
+                                            console.log('🖼️ Loading profile image from:', finalUrl);
+                                            console.log('📦 userData.photo_url:', userData.photo_url);
+                                            console.log('🌐 API_BASE_URL:', API_BASE_URL);
+                                            return finalUrl;
+                                        })()
+                                    }} 
                                     style={styles.avatar}
                                     defaultSource={require('../../assets/images/icon.png')}
+                                    onError={(error) => {
+                                        console.log('❌ Error loading profile image:', error);
+                                        console.log('🔗 Attempted URL:', userData.photo_url.startsWith('http') 
+                                            ? userData.photo_url 
+                                            : `${API_BASE_URL.replace('/api', '')}${userData.photo_url}`);
+                                    }}
+                                    onLoad={() => {
+                                        console.log('✅ Profile image loaded successfully!');
+                                    }}
                                 />
                             ) : (
                                 <Image 

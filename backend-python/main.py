@@ -71,7 +71,12 @@ conf = ConnectionConfig(
 
 
 # FastAPI app
-app = FastAPI(title="Pawthos API", description="Pet management system API", version="1.0.0")
+app = FastAPI(
+    title="Pawthos API", 
+    description="Pet management system API", 
+    version="1.0.0",
+    redirect_slashes=False
+)
 
 # CORS middleware
 app.add_middleware(
@@ -185,7 +190,7 @@ class Appointment(Base):
     veterinarian = Column(String, nullable=True)
     notes = Column(Text, nullable=True)
 
-    status = Column(String, default="pending")
+    status = Column(String, default="scheduled")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=True)
 
@@ -319,6 +324,15 @@ def _ensure_user_photo_url_column() -> None:
         logging.error(f"Schema check failed (users photo_url): {e}")
 
 _ensure_user_photo_url_column()
+
+def _ensure_appointment_location_column() -> None:
+    try:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE appointments ADD COLUMN IF NOT EXISTS location VARCHAR NULL"))
+    except Exception as e:
+        logging.error(f"Schema check failed (appointments location): {e}")
+
+_ensure_appointment_location_column()
 
 
 # Pydantic models for request/response
@@ -850,6 +864,7 @@ def get_dashboard(current_user: User = Depends(get_current_user), db: Session = 
                 time=str(appt.time) if appt.time else "",
                 veterinarian=appt.veterinarian,
                 notes=appt.notes,
+                location=getattr(appt, 'location', None),
                 status=appt.status,
                 created_at=appt.created_at,
                 updated_at=appt.updated_at,
@@ -932,20 +947,28 @@ def delete_pet(pet_id: int, current_user: User = Depends(get_current_user), db: 
 
 @app.post("/api/appointments", response_model=AppointmentResponse)
 def create_appointment(appointment: AppointmentCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    db_appointment = Appointment(
-        pet_id=appointment.pet_id,
-        user_id=current_user.id,
-        type=appointment.type,
-        date=appointment.date,
-        time=appointment.time,
-        veterinarian=appointment.veterinarian,
-        notes=appointment.notes
-    )
-    
-    db.add(db_appointment)
-    db.commit()
-    db.refresh(db_appointment)
-    return _to_appointment_response(db_appointment)
+    logging.info(f"Creating appointment - received data: {appointment.dict()}")
+    try:
+        db_appointment = Appointment(
+            pet_id=appointment.pet_id,
+            user_id=current_user.id,
+            type=appointment.type,
+            date=appointment.date,
+            time=appointment.time,
+            veterinarian=appointment.veterinarian,
+            notes=appointment.notes,
+            status="scheduled"
+        )
+        
+        db.add(db_appointment)
+        db.commit()
+        db.refresh(db_appointment)
+        logging.info(f"Appointment created successfully with ID: {db_appointment.id}")
+        return _to_appointment_response(db_appointment)
+    except Exception as e:
+        logging.error(f"Error creating appointment: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Failed to create appointment: {str(e)}")
 
 @app.get("/api/appointments", response_model=List[AppointmentResponse])
 def get_appointments(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -1230,6 +1253,36 @@ def upload_pet_photo(pet_id: int, file: UploadFile = File(...), current_user: Us
     db.commit()
     
     return {"photo_url": pet.photo_url}
+
+@app.post("/api/upload-user-photo")
+def upload_user_photo(file: UploadFile = File(...), current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Upload user profile photo and return the URL"""
+    try:
+        # Validate file type
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="File must be an image")
+        
+        # Generate unique filename
+        file_extension = file.filename.split('.')[-1] if file.filename else 'jpg'
+        filename = f"user_{current_user.id}_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}.{file_extension}"
+        file_path = os.path.join("uploads", filename)
+        
+        # Save file
+        with open(file_path, "wb") as buffer:
+            content = file.file.read()
+            buffer.write(content)
+        
+        # Update user photo URL
+        photo_url = f"/uploads/{filename}"
+        current_user.photo_url = photo_url
+        db.commit()
+        
+        return {"photo_url": photo_url}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logging.error(f"User photo upload error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to upload photo")
 
 # AI Model functionality temporarily disabled due to PyTorch installation issues
 class CatPainModelService:
@@ -1905,7 +1958,19 @@ def health_check():
         "status": "healthy",
         "eld_model_available": ELD_AVAILABLE and eld_model is not None,
         "torch_available": TORCH_AVAILABLE,
-        "version": "2.0.0"
+        "version": "2.0.0",
+        "code_version": "2024-10-21-v2",  # Updated to verify code changes
+        "appointments_location_field": True
+    }
+
+@app.get("/api/test")
+def test_endpoint():
+    """Test endpoint to verify server is running latest code"""
+    return {
+        "message": "Server is running with latest code - Oct 21, 2024 v2",
+        "timestamp": datetime.utcnow().isoformat(),
+        "appointments_endpoint": "/api/appointments",
+        "location_field_enabled": True
     }
 
 @app.get("/api/vaccination-events/scheduled", response_model=List[VaccinationEventResponse])

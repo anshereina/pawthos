@@ -115,15 +115,47 @@ export const createPainAssessment = async (assessmentData: PainAssessmentCreate)
             return 0;
         };
 
+        // Get current user ID from token
+        const getCurrentUserId = async (): Promise<number | null> => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    return userData.id;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error getting user ID:', error);
+                return null;
+            }
+        };
+
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return {
+                success: false,
+                message: 'Unable to get user information. Please log in again.'
+            };
+        }
+
         const normalizedPayload = {
             pet_id: assessmentData.pet_id,
+            user_id: userId,  // Add required user_id
             pet_name: assessmentData.pet_name,
             pet_type: assessmentData.pet_type,
+            pain_level: assessmentData.pain_level,
+            assessment_date: new Date().toISOString().split('T')[0],  // Add required assessment_date
             image_url: assessmentData.image_url,
             pain_score: typeof assessmentData.pain_score === 'number'
                 ? assessmentData.pain_score
                 : toPainScore(assessmentData.pain_level),
-            pain_level: assessmentData.pain_level,  // Include legacy field for backend compatibility
             notes: assessmentData.notes ||
                 [
                     assessmentData.recommendations ? `Recommendations: ${assessmentData.recommendations}` : undefined,
@@ -149,14 +181,20 @@ export const createPainAssessment = async (assessmentData: PainAssessmentCreate)
 
         if (!response.ok) {
             let message = 'Failed to create pain assessment';
+            let errorDetails = '';
             try {
                 const errorData = await response.json();
                 message = errorData?.detail || message;
+                errorDetails = JSON.stringify(errorData, null, 2);
+                console.error('Backend validation error:', errorData);
             } catch (e) {
                 const text = await response.text();
                 message = text || message;
+                errorDetails = text;
+                console.error('Backend error response:', text);
             }
-            return { success: false, message };
+            console.error('Full error details:', errorDetails);
+            return { success: false, message: `${message}\n\nError details: ${errorDetails}` };
         }
 
         const data = await response.json();
@@ -199,9 +237,41 @@ export const createPainAssessmentWithImage = async (
             return 0;
         };
 
+        // Get current user ID from token
+        const getCurrentUserId = async (): Promise<number | null> => {
+            try {
+                const response = await fetch(`${API_BASE_URL}/me`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const userData = await response.json();
+                    return userData.id;
+                }
+                return null;
+            } catch (error) {
+                console.error('Error getting user ID:', error);
+                return null;
+            }
+        };
+
+        const userId = await getCurrentUserId();
+        if (!userId) {
+            return {
+                success: false,
+                message: 'Unable to get user information. Please log in again.'
+            };
+        }
+
         const form = new FormData();
         form.append('pet_id', String(assessmentData.pet_id));
+        form.append('user_id', String(userId));  // Add required user_id
         form.append('pain_score', String(typeof assessmentData.pain_score === 'number' ? assessmentData.pain_score : toPainScore(assessmentData.pain_level)));
+        form.append('assessment_date', new Date().toISOString().split('T')[0]);  // Add required assessment_date
         if (assessmentData.pain_level) form.append('pain_level', assessmentData.pain_level);
         if (assessmentData.notes) form.append('notes', assessmentData.notes);
         if (assessmentData.pet_name) form.append('pet_name', assessmentData.pet_name);
@@ -216,7 +286,7 @@ export const createPainAssessmentWithImage = async (
             type: 'image/jpeg',
         } as any);
 
-        const response = await fetch(`${API_BASE_URL}/pain-assessments/with-image`, {
+        const response = await fetch(`${API_BASE_URL}/pain-assessments/with-image/`, {
             method: 'POST',
             headers: {
                 'Authorization': `Bearer ${token}`,

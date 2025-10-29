@@ -6,6 +6,7 @@ import { useFonts } from 'expo-font';
 import BottomNavigationBar from './components/BottomNavigationBar';
 import BottomGradient from './components/BottomGradient';
 import HomePage from './pages/HomePage';
+import { API_BASE_URL } from '../utils/config';
 import FAQsPage from './pages/FAQsPage';
 import MyAccountPage from './pages/MyAccountPage';
 import AppointmentPage from './pages/AppointmentPage';
@@ -31,6 +32,8 @@ import PainAssessmentLandingPage from './pages/PainAssessmentLandingPage';
 import ConfirmLogoutModal from './modals/ConfirmLogoutModal';
 import { logout as performLogout, getCurrentUser } from '../utils/auth.utils';
 import { getDashboardData, DashboardData } from '../utils/dashboard.utils';
+import { getUserAlerts } from '../utils/alerts.utils';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import CanineIntegrationPage from './pages/CanineIntegrationPage';
 import CanineGuidelineIntegrationPage from './pages/CanineGuidelineIntegrationPage';
 import CanineIntegrationQuestionPage from './pages/CanineIntegrationQuestionPage';
@@ -140,6 +143,26 @@ const styles = StyleSheet.create({
         height: 40,
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative',
+    },
+    notificationBadge: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: '#FF3B30',
+        borderRadius: 10,
+        minWidth: 18,
+        height: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+        borderWidth: 2,
+        borderColor: '#ffffff',
+    },
+    notificationBadgeText: {
+        color: '#ffffff',
+        fontSize: 11,
+        fontWeight: 'bold',
     },
     menuButton: {
         width: 40,
@@ -518,6 +541,7 @@ export default function MainApp({ navigation }: { navigation: any }) {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [currentQuestionCategory, setCurrentQuestionCategory] = useState<string>('');
     const [navigationHistory, setNavigationHistory] = useState<{page: string, data?: any}[]>([{page: 'Home'}]);
+    const [notificationCount, setNotificationCount] = useState<number>(0);
     
     // Simplified sidebar - no animations needed
 
@@ -532,6 +556,8 @@ export default function MainApp({ navigation }: { navigation: any }) {
                 return currentQuestionCategory || "Assessment Questions";
             case 'CanineIntegrationResult':
                 return "Results";
+            case 'IntegrationResult':
+                return "Result";
             case 'IntegrationQuestionsCat':
                 return "Cat's Pain Assessment";
             default:
@@ -586,6 +612,67 @@ export default function MainApp({ navigation }: { navigation: any }) {
     };
     
 
+    // Function to refresh user data (exposed for pages to call)
+    const refreshUserData = async () => {
+        try {
+            console.log('Refreshing user data...');
+            const user = await getCurrentUser();
+            console.log('User data refreshed:', user);
+            setUserData(user);
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            setUserData(null);
+        }
+    };
+
+    // Function to refresh dashboard data
+    const refreshDashboardData = async () => {
+        try {
+            console.log('Refreshing dashboard data...');
+            const result = await getDashboardData();
+            if (result.success && result.data) {
+                setDashboardData(result.data);
+                console.log('Dashboard data refreshed, pets count:', result.data.pets_count);
+            }
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            setDashboardData(null);
+        }
+    };
+
+    // Function to refresh notification count
+    const refreshNotificationCount = async () => {
+        try {
+            const user = await getCurrentUser();
+            if (user && user.email) {
+                const alerts = await getUserAlerts(user.email);
+                
+                // Load read and cleared notification IDs from AsyncStorage (same keys as NotificationPage)
+                const READ_NOTIFICATIONS_KEY = '@read_notifications';
+                const CLEARED_NOTIFICATIONS_KEY = '@cleared_notifications';
+                
+                const [readStoredData, clearedStoredData] = await Promise.all([
+                    AsyncStorage.getItem(READ_NOTIFICATIONS_KEY),
+                    AsyncStorage.getItem(CLEARED_NOTIFICATIONS_KEY)
+                ]);
+                
+                const readIds = readStoredData ? new Set(JSON.parse(readStoredData)) : new Set();
+                const clearedIds = clearedStoredData ? new Set(JSON.parse(clearedStoredData)) : new Set();
+                
+                // Filter out cleared notifications and count only unread ones
+                const unreadCount = alerts.filter(alert => 
+                    !clearedIds.has(alert.id) && !readIds.has(alert.id)
+                ).length;
+                
+                setNotificationCount(unreadCount);
+                console.log('Notification count refreshed - Total:', alerts.length, 'Unread:', unreadCount);
+            }
+        } catch (error) {
+            console.error('Error loading notifications:', error);
+            setNotificationCount(0);
+        }
+    };
+
     // Load user data and dashboard data on mount
     React.useEffect(() => {
         const loadUserData = async () => {
@@ -598,21 +685,36 @@ export default function MainApp({ navigation }: { navigation: any }) {
             }
         };
 
-        const loadDashboardData = async () => {
-            try {
-                const result = await getDashboardData();
-                if (result.success && result.data) {
-                    setDashboardData(result.data);
-                }
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-                setDashboardData(null);
-            }
-        };
-
         loadUserData();
-        loadDashboardData();
+        refreshDashboardData();
+        refreshNotificationCount();
     }, []);
+
+    // Refresh data when navigating from My account or Pet profile pages
+    React.useEffect(() => {
+        const previousPage = navigationHistory[navigationHistory.length - 2]?.page;
+        
+        // Refresh user data when coming from My account page
+        if (selectedMenu === 'My account' || previousPage === 'My account') {
+            console.log('Detected navigation involving My account, refreshing user data...');
+            refreshUserData();
+        }
+        
+        // Refresh dashboard data when coming from Pet-related pages
+        if (selectedMenu === 'Home' || 
+            previousPage === 'Pet profile' || 
+            previousPage === 'Register Pet' ||
+            previousPage === 'Pet Details') {
+            console.log('Detected navigation involving Pets, refreshing dashboard data...');
+            refreshDashboardData();
+        }
+
+        // Refresh notification count when coming from Notification page OR navigating to Home
+        if (previousPage === 'Notification' || selectedMenu === 'Home') {
+            console.log('Detected navigation involving notifications, refreshing notification count...');
+            refreshNotificationCount();
+        }
+    }, [selectedMenu]);
 
     // Update bottom tab state whenever selectedMenu changes
     React.useEffect(() => {
@@ -737,7 +839,7 @@ export default function MainApp({ navigation }: { navigation: any }) {
     // Modular page mapping
     const pageMap: Record<string, any> = {
         Home: <HomePage onSelect={navigateToPage} />, 
-        "My account": <MyAccountPage />, 
+        "My account": <MyAccountPage onUserDataUpdate={refreshUserData} />, 
         "Appointment": <AppointmentPage onNavigate={navigateWithData} />, 
         "Appointment Scheduling": <AppointmentSchedulingPage initialAppointmentType={appointmentType} onBack={navigateBack} onNavigate={navigateToPage} {...navigationData} />, 
         "Pet profile": <PetProfilePage onNavigate={navigateWithData} />,
@@ -759,7 +861,8 @@ export default function MainApp({ navigation }: { navigation: any }) {
         "Law on Pet Ownership": <LawOnPetOwnershipPage onBack={navigateBack} />,
         "Retrieve Dog": <RetrieveDogPage onBack={navigateBack} />,
                     "Common Signs of Rabies in Pets": <SignOfRabiesPage onBack={navigateBack} />,
-            "Pain Assessment": <PainAssessmentLandingPage onGetStarted={() => navigateToPage('Integration')} onBack={navigateBack} />,
+            "Pain Assessment": <PainAssessmentLandingPage onGetStarted={() => navigateToPage('Integration')} onBack={navigateBack} onViewHistory={() => navigateToPage('Pain Assessment History')} />,
+            "Pain Assessment History": <PainAssessmentPage onNavigate={navigateToPage} />,
             "Integration": <IntegrationPage onSelect={navigateToPage} />,
                 "CanineIntegration": <CanineIntegrationPage onSelect={navigateToPage} />,
     "CanineGuidelineIntegration": <CanineGuidelineIntegrationPage onSelect={navigateToPage} />,
@@ -786,23 +889,34 @@ export default function MainApp({ navigation }: { navigation: any }) {
         />,
         "IntegrationScanning": <IntegrationScanningPage 
             imageUri={navigationData.capturedImage}
-            onDone={(result: string, imageUri?: string) => { setNavigationData(prev => ({ ...prev, painLevel: result, capturedImage: imageUri || prev.capturedImage })); navigateToPage('IntegrationResult'); }}
+            onDone={(result: any, imageUri?: string) => { setNavigationData(prev => ({ ...prev, apiResult: result, capturedImage: imageUri || prev.capturedImage })); navigateToPage('IntegrationResult'); }}
             onCancel={() => navigateToPage('IntegrationPicture')}
         />,
         "IntegrationImageResult": <IntegrationImageResultPage onRetake={() => navigateToPage('IntegrationPicture')} onSeeResult={() => navigateToPage('IntegrationResult')} capturedImage={navigationData.capturedImage} />,
-        "IntegrationResult": <IntegrationResultPage 
+        "IntegrationResult": (() => {
+          console.log('🔍 IntegrationResult - navigationData:', navigationData);
+          console.log('🔍 IntegrationResult - apiResult:', navigationData.apiResult);
+          return <IntegrationResultPage 
             onSecondOpinion={() => navigateToPage('IntegrationPicture')} 
             onHome={() => navigateToPage('Home')} 
             onSave={() => navigateToPage('Pain Assessment')}
             onTakeAnotherPicture={() => navigateToPage('IntegrationPicture')}
+            painLevel={navigationData.apiResult?.pain_level}
+            fgsBreakdown={navigationData.apiResult?.fgs_breakdown}
+            detailedExplanation={navigationData.apiResult?.detailed_explanation}
+            actionableAdvice={navigationData.apiResult?.actionable_advice}
+            landmarkAnalysis={navigationData.apiResult?.landmark_analysis}
+            visualLandmarks={navigationData.apiResult?.visual_landmarks}
+            capturedImage={navigationData.capturedImage}
+            apiResult={navigationData.apiResult}
             onSecondOpinionAppointment={() => {
                 setAppointmentType('Consultation');
                 navigateToPage('Appointment Scheduling');
             }}
             petType={selectedPetType} 
-            severityLevel="Unknown" 
-            painLevel={navigationData.painLevel}
-        />,
+            severityLevel="Unknown"
+          />;
+        })(),
         // Add more pages here as you modularize them
     };
 
@@ -824,8 +938,19 @@ export default function MainApp({ navigation }: { navigation: any }) {
                                 <TouchableOpacity style={styles.avatarButton} onPress={() => navigateToPage('My account')}>
                                     {userData?.photo_url ? (
                                         <Image 
-                                            source={{ uri: userData.photo_url }} 
+                                            key={userData.photo_url}
+                                            source={{ 
+                                                uri: (userData.photo_url.startsWith('http') 
+                                                    ? userData.photo_url 
+                                                    : `${API_BASE_URL.replace('/api', '')}${userData.photo_url}`) + `?t=${Date.now()}`
+                                            }} 
                                             style={styles.headerAvatar}
+                                            onError={(error) => {
+                                                console.log('Error loading header avatar:', error);
+                                                console.log('Attempted URL:', userData.photo_url.startsWith('http') 
+                                                    ? userData.photo_url 
+                                                    : `${API_BASE_URL.replace('/api', '')}${userData.photo_url}`);
+                                            }}
                                         />
                                     ) : (
                                         <View style={styles.defaultAvatar}>
@@ -841,6 +966,13 @@ export default function MainApp({ navigation }: { navigation: any }) {
                             <View style={styles.headerRight}>
                                 <TouchableOpacity style={styles.notificationButton} onPress={() => navigateToPage('Notification')}>
                                     <Ionicons name="notifications" size={20} color="#045b26" />
+                                    {notificationCount > 0 && (
+                                        <View style={styles.notificationBadge}>
+                                            <Text style={styles.notificationBadgeText}>
+                                                {notificationCount > 99 ? '99+' : notificationCount}
+                                            </Text>
+                                        </View>
+                                    )}
                                 </TouchableOpacity>
                                 <TouchableOpacity style={styles.menuButton} onPress={() => setMenuOpen(true)}>
                                     <Ionicons name="menu" size={20} color="#045b26" />

@@ -13,6 +13,8 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import { getAuthToken } from '../../utils/auth.utils';
+import { API_BASE_URL } from '../../utils/config';
 
 interface EditProfileModalProps {
     visible: boolean;
@@ -37,6 +39,7 @@ export default function EditProfileModal({
         photo_url: ''
     });
     const [imageUri, setImageUri] = useState<string | null>(null);
+    const [newImageUri, setNewImageUri] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
 
     useEffect(() => {
@@ -48,24 +51,30 @@ export default function EditProfileModal({
                 address: userData.address || '',
                 photo_url: userData.photo_url || ''
             });
-            setImageUri(userData.photo_url || null);
+            // Set the server URL for display, but clear any pending new image
+            const serverUrl = userData.photo_url ? (userData.photo_url.startsWith('http') ? userData.photo_url : `${API_BASE_URL.replace('/api', '')}${userData.photo_url}`) : null;
+            console.log('EditProfileModal: Setting image URI from userData:', serverUrl);
+            setImageUri(serverUrl);
+            setNewImageUri(null);
         }
     }, [userData]);
 
     const pickImage = async () => {
         try {
             const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ['images'] as any,
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.8,
             });
 
             if (!result.canceled && result.assets[0]) {
+                // Store the new local URI temporarily for preview
                 setImageUri(result.assets[0].uri);
-                setFormData(prev => ({ ...prev, photo_url: result.assets[0].uri }));
+                setNewImageUri(result.assets[0].uri);
             }
         } catch (error) {
+            console.error('Pick image error:', error);
             Alert.alert('Error', 'Failed to pick image');
         }
     };
@@ -85,15 +94,83 @@ export default function EditProfileModal({
             });
 
             if (!result.canceled && result.assets[0]) {
+                // Store the new local URI temporarily for preview
                 setImageUri(result.assets[0].uri);
-                setFormData(prev => ({ ...prev, photo_url: result.assets[0].uri }));
+                setNewImageUri(result.assets[0].uri);
             }
         } catch (error) {
             Alert.alert('Error', 'Failed to take photo');
         }
     };
 
-    const handleSave = () => {
+    const uploadImage = async (uri: string): Promise<string | null> => {
+        try {
+            setUploading(true);
+            
+            console.log('Starting image upload...');
+            console.log('Image URI:', uri);
+            console.log('API_BASE_URL:', API_BASE_URL);
+            
+            // Create form data with the image
+            const formData = new FormData();
+            const filename = uri.split('/').pop() || 'photo.jpg';
+            const match = /\.(\w+)$/.exec(filename);
+            const type = match ? `image/${match[1]}` : 'image/jpeg';
+            
+            console.log('Filename:', filename);
+            console.log('Type:', type);
+            
+            formData.append('file', {
+                uri: uri,
+                name: filename,
+                type: type,
+            } as any);
+
+            // Get auth token
+            const token = await getAuthToken();
+            if (!token) {
+                console.error('No auth token found');
+                Alert.alert('Error', 'Authentication required');
+                return null;
+            }
+            
+            console.log('Auth token present:', token ? 'Yes' : 'No');
+
+            // Upload to server
+            const uploadUrl = `${API_BASE_URL}/upload-user-photo`;
+            console.log('Upload URL:', uploadUrl);
+            
+            const response = await fetch(uploadUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: formData,
+            });
+
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Upload failed:', errorText);
+                throw new Error(`Failed to upload image: ${response.status} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            console.log('Upload response:', data);
+            return data.photo_url; // Returns server URL like "/uploads/user_123_timestamp.jpg"
+            
+        } catch (error) {
+            console.error('Image upload error:', error);
+            Alert.alert('Error', `Failed to upload image: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            return null;
+        } finally {
+            setUploading(false);
+        }
+    };
+
+    const handleSave = async () => {
         if (!formData.name.trim()) {
             Alert.alert('Error', 'Name is required');
             return;
@@ -102,7 +179,24 @@ export default function EditProfileModal({
             Alert.alert('Error', 'Email is required');
             return;
         }
-        onSave(formData);
+
+        // If there's a new image, upload it first
+        if (newImageUri) {
+            const serverUrl = await uploadImage(newImageUri);
+            if (serverUrl) {
+                // Update formData with the server URL
+                const updatedData = { ...formData, photo_url: serverUrl };
+                onSave(updatedData);
+            } else {
+                Alert.alert('Error', 'Failed to upload profile picture. Save without image?', [
+                    { text: 'Cancel', style: 'cancel' },
+                    { text: 'Save Without Image', onPress: () => onSave(formData) }
+                ]);
+            }
+        } else {
+            // No new image, just save the other fields
+            onSave(formData);
+        }
     };
 
     const showImagePicker = () => {
@@ -132,9 +226,9 @@ export default function EditProfileModal({
                     <TouchableOpacity 
                         onPress={handleSave} 
                         style={styles.saveButton}
-                        disabled={loading}
+                        disabled={loading || uploading}
                     >
-                        {loading ? (
+                        {(loading || uploading) ? (
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
                             <Text style={styles.saveButtonText}>Save</Text>

@@ -13,10 +13,17 @@ export interface AppointmentData {
   time: string;
   veterinarian?: string;
   notes?: string;
-  location?: string;
   status: string;
   created_at: string;
   updated_at?: string;
+  // Pet details
+  pet_name?: string;
+  pet_species?: string;
+  pet_breed?: string;
+  pet_age?: string;
+  pet_gender?: string;
+  pet_weight?: string;
+  owner_name?: string;
 }
 
 export interface AppointmentCreate {
@@ -26,7 +33,14 @@ export interface AppointmentCreate {
   time: string;
   veterinarian?: string;
   notes?: string;
-  location?: string;
+  // Pet details
+  pet_name?: string;
+  pet_species?: string;
+  pet_breed?: string;
+  pet_age?: string;
+  pet_gender?: string;
+  pet_weight?: string;
+  owner_name?: string;
 }
 
 export interface AppointmentResult {
@@ -48,7 +62,7 @@ export async function getAppointments(): Promise<AppointmentResult> {
       return { success: false, message: "No authentication token found" };
     }
 
-    const url = `${API_BASE_URL}/appointments`;
+    const url = `${API_BASE_URL}/appointments/`;
     console.log('Appointments API URL:', url);
 
     const response = await fetch(url, {
@@ -85,8 +99,9 @@ export async function createAppointment(appointmentData: AppointmentCreate): Pro
       return { success: false, message: "No authentication token found" };
     }
 
-    const url = `${API_BASE_URL}/appointments`;
+    const url = `${API_BASE_URL}/appointments/`;
     console.log('Create Appointment API URL:', url);
+    console.log('Create Appointment Data:', appointmentData);
 
     const response = await fetch(url, {
       method: 'POST',
@@ -95,9 +110,20 @@ export async function createAppointment(appointmentData: AppointmentCreate): Pro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(appointmentData),
+      redirect: 'follow'  // Explicitly follow redirects
     });
 
     console.log('Create Appointment API response status:', response.status);
+    console.log('Create Appointment API response URL:', response.url);
+    
+    // Handle redirect responses
+    if (response.status === 307 || response.status === 308) {
+      console.log('Received redirect, response details:', {
+        status: response.status,
+        url: response.url,
+        redirected: response.redirected
+      });
+    }
     
     if (!response.ok) {
       const errorText = await response.text();
@@ -106,6 +132,7 @@ export async function createAppointment(appointmentData: AppointmentCreate): Pro
     }
 
     const data = await response.json();
+    console.log('Create Appointment API success response:', data);
     return { success: true, data };
   } catch (error) {
     console.error('Create Appointment API error:', error);

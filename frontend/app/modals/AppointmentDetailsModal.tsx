@@ -285,13 +285,15 @@ export default function AppointmentDetailsModal({
                             </View>
                         )}
                         
-                        {/* Notes */}
-                        {appointmentData.notes && (
-                            <View style={styles.modalField}>
-                                <Text style={styles.modalFieldLabel}>Notes:</Text>
-                                <Text style={styles.modalFieldValue}>{appointmentData.notes}</Text>
-                            </View>
-                        )}
+                        {/* Message / Remarks from website */}
+                        <View style={styles.modalField}>
+                            <Text style={styles.modalFieldLabel}>Message / Remarks:</Text>
+                            <Text style={styles.modalFieldValue}>
+                                {appointmentData.notes && appointmentData.notes.trim().length > 0 
+                                    ? appointmentData.notes 
+                                    : 'No remarks yet.'}
+                            </Text>
+                        </View>
                         
                         <TouchableOpacity 
                             style={styles.cancelButton}

@@ -138,23 +138,29 @@ export default function ForgotPasswordPage({ navigation }) {
         setError(null);
         setSuccess(null);
 
-        const result = await auth.requestPasswordReset(email.trim());
-        setLoading(false);
-
-        if (result.success) {
-            setSuccess(result.message || "Password reset email sent successfully");
-            Alert.alert(
-                "Email Sent",
-                "If an account with this email exists, you will receive password reset instructions shortly.",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => navigation.navigate('Login')
-                    }
-                ]
-            );
-        } else {
-            setError(result.message || "Failed to send password reset email");
+        try {
+            const result = await auth.requestPasswordReset(email.trim());
+            
+            if (result.success) {
+                setSuccess(result.message || "Password reset email sent successfully");
+                Alert.alert(
+                    "Email Sent",
+                    "If an account with this email exists, you will receive password reset instructions shortly. Please check your inbox and spam folder.",
+                    [
+                        {
+                            text: "OK",
+                            onPress: () => navigation.navigate('Login')
+                        }
+                    ]
+                );
+            } else {
+                setError(result.message || "Failed to send password reset email");
+            }
+        } catch (error) {
+            console.error('❌ Password reset request error:', error);
+            setError("An unexpected error occurred. Please try again.");
+        } finally {
+            setLoading(false);
         }
     };
 

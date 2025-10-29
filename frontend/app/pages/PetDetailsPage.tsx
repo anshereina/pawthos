@@ -4,6 +4,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getPetById, updatePet, PetData } from '../../utils/pets.utils';
 import { isAuthenticated } from '../../utils/auth.utils';
+import { API_BASE_URL } from '../../utils/config';
 import EditPetProfileModal from '../modals/EditPetProfileModal';
 
 const { width, height } = Dimensions.get('window');
@@ -434,7 +435,20 @@ export default function PetDetailsPage({
                 {/* Hero Image Section */}
                 <View style={styles.heroSection}>
                     {(petData as any).photo_url ? (
-                        <Image source={{ uri: (petData as any).photo_url }} style={styles.petImage} />
+                        <Image 
+                            source={{ 
+                                uri: (petData as any).photo_url.startsWith('http') 
+                                    ? (petData as any).photo_url 
+                                    : `${API_BASE_URL.replace('/api', '')}${(petData as any).photo_url}` 
+                            }} 
+                            style={styles.petImage}
+                            onError={(error) => {
+                                console.log('Error loading pet image:', error);
+                                console.log('Attempted URL:', (petData as any).photo_url.startsWith('http') 
+                                    ? (petData as any).photo_url 
+                                    : `${API_BASE_URL.replace('/api', '')}${(petData as any).photo_url}`);
+                            }}
+                        />
                     ) : (
                         <View style={styles.imagePlaceholder}>
                             <MaterialCommunityIcons name="camera-off" size={64} color="#999" />
