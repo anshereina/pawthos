@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Alert, RefreshControl, FlatList, Animated } from 'react-native';
+import { View, Text, Image, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Alert, RefreshControl, FlatList, Animated, TextInput } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { getDashboardData, DashboardData } from '../../utils/dashboard.utils';
 import { getCurrentUser } from '../../utils/auth.utils';
 import { getScheduledVaccinationEvents, VaccinationEvent } from '../../utils/vaccination.utils';
+import { medicalRecordsAPI } from '../../utils/medicalRecords.utils';
 
 export default function HomePage({ onSelect }: { onSelect: (label: string) => void }) {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
@@ -11,6 +12,8 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [vaccinationEvents, setVaccinationEvents] = useState<VaccinationEvent[]>([]);
+    const [medicalRecordsCount, setMedicalRecordsCount] = useState<number>(0);
+    const [searchQuery, setSearchQuery] = useState<string>('');
     
     // Super fast entrance animation
     const enterOpacity = useRef(new Animated.Value(0)).current;
@@ -74,11 +77,12 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
             setLoading(true);
             console.log('Loading dashboard data...');
             
-            // Load dashboard data, user data, and vaccination events in parallel
-            const [dashboardResult, user, vaccinationResult] = await Promise.all([
+            // Load dashboard data, user data, vaccination events, and medical records in parallel
+            const [dashboardResult, user, vaccinationResult, medicalRecords] = await Promise.all([
                 getDashboardData(),
                 getCurrentUser(),
-                getScheduledVaccinationEvents()
+                getScheduledVaccinationEvents(),
+                medicalRecordsAPI.getMedicalRecords()
             ]);
             
             if (dashboardResult.success && dashboardResult.data) {
@@ -94,6 +98,10 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
             } else {
                 console.error('Vaccination events error:', vaccinationResult.message);
             }
+            
+            // Set medical records count
+            setMedicalRecordsCount(medicalRecords.length);
+            console.log('Medical records count:', medicalRecords.length);
             
             // Set user data for profile image
             console.log('Setting user data:', user ? 'user found' : 'no user');
@@ -117,11 +125,15 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
     };
 
     const getUserName = () => {
-        if (dashboardData?.user?.name) {
-            return dashboardData.user.name;
+        // Prefer first name from full name
+        if (dashboardData?.user?.name && typeof dashboardData.user.name === 'string') {
+            const trimmed = dashboardData.user.name.trim();
+            if (trimmed.length > 0) {
+                return trimmed.split(' ')[0];
+            }
         }
+        // Fallback: email prefix
         if (dashboardData?.user?.email) {
-            // Extract name from email if no name is set
             return dashboardData.user.email.split('@')[0];
         }
         return 'User';
@@ -152,6 +164,73 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
         return `${days} days remaining`;
     };
 
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+        
+        // If search query is empty, do nothing
+        if (!query.trim()) {
+            return;
+        }
+
+        // Search logic - match against menu items and quick actions
+        const searchLower = query.toLowerCase();
+        
+        // Check menu items
+        const menuMatch = menuItems.find(item => 
+            item.label.toLowerCase().includes(searchLower)
+        );
+        
+        if (menuMatch) {
+            // Navigate to matched menu item
+            if (menuMatch.label === 'Upcoming Vaccination') {
+                onSelect('Upcoming Vaccination');
+            } else if (menuMatch.label === "Owner's Responsibility") {
+                onSelect("Owner's Responsibility");
+            } else if (menuMatch.label === 'Animal Bite') {
+                onSelect('Animal Bite');
+            } else if (menuMatch.label === 'How to Retrieve my dog?') {
+                onSelect('Retrieve Dog');
+            } else if (menuMatch.label === 'Common Signs of Rabies in Pets') {
+                onSelect('Common Signs of Rabies in Pets');
+            } else if (menuMatch.label === "FAQ's and Contact Information") {
+                onSelect('FAQs');
+            } else {
+                onSelect(menuMatch.label);
+            }
+            setSearchQuery(''); // Clear search after navigation
+            return;
+        }
+
+        // Check quick actions
+        if (searchLower.includes('pain') || searchLower.includes('assessment')) {
+            onSelect('Pain Assessment');
+            setSearchQuery('');
+            return;
+        }
+        if (searchLower.includes('appointment') || searchLower.includes('book')) {
+            onSelect('Appointment');
+            setSearchQuery('');
+            return;
+        }
+        if (searchLower.includes('add') || searchLower.includes('register') || searchLower.includes('new pet')) {
+            onSelect('Register Pet');
+            setSearchQuery('');
+            return;
+        }
+        if (searchLower.includes('view') || searchLower.includes('my pets') || searchLower.includes('pet profile')) {
+            onSelect('Pet profile');
+            setSearchQuery('');
+            return;
+        }
+
+        // If no match found, show alert
+        Alert.alert(
+            'No Results Found',
+            `No matching service found for "${query}". Try searching for: Vaccination, Appointment, Pain Assessment, Pet Profile, etc.`,
+            [{ text: 'OK', onPress: () => setSearchQuery('') }]
+        );
+    };
+
 
     return (
         <SafeAreaView style={{ flex: 1, backgroundColor: '#ffffff' }}>
@@ -168,7 +247,7 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
                         backgroundColor: '#FFFFFF',
                         borderRadius: 8,
                         paddingHorizontal: 20,
-                        paddingVertical: 16,
+                        paddingVertical: 12,
                         borderWidth: 1,
                         borderColor: '#E0E0E0',
                         elevation: 1,
@@ -181,14 +260,26 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
                         shadowRadius: 2,
                     }}>
                         <Ionicons name="search" size={20} color="#888888" style={{ marginRight: 16 }} />
-                        <Text style={{
-                        flex: 1,
-                            fontSize: 16,
-                            color: '#888888',
-                            fontFamily: 'Flink',
-                        }}>
-                            Search for anything
-                        </Text>
+                        <TextInput
+                            style={{
+                                flex: 1,
+                                fontSize: 16,
+                                color: '#000000',
+                                fontFamily: 'Flink',
+                                paddingVertical: 4,
+                            }}
+                            placeholder="Search for anything"
+                            placeholderTextColor="#888888"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                            onSubmitEditing={() => handleSearch(searchQuery)}
+                            returnKeyType="search"
+                        />
+                        {searchQuery.length > 0 && (
+                            <TouchableOpacity onPress={() => setSearchQuery('')}>
+                                <Ionicons name="close-circle" size={20} color="#888888" />
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </View>
 
@@ -456,7 +547,7 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
                                 color: '#045b26',
                                 marginTop: 8,
                             }}>
-                                12
+                                {medicalRecordsCount}
                             </Text>
                             <Text style={{
                                 fontSize: 12,
@@ -596,54 +687,6 @@ export default function HomePage({ onSelect }: { onSelect: (label: string) => vo
                                 View Pets
                             </Text>
                         </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Health Alerts */}
-                <View style={{ 
-                    marginBottom: 24,
-                    paddingHorizontal: 16,
-                }}>
-                    <Text style={{
-                        fontSize: 18,
-                        fontWeight: 'bold',
-                        color: '#000',
-                        fontFamily: 'Jumper',
-                        marginBottom: 16,
-                    }}>
-                        Health Alerts
-                    </Text>
-                    <View style={{
-                        backgroundColor: '#E8F5E8',
-                        borderRadius: 16,
-                        padding: 16,
-                        borderLeftWidth: 4,
-                        borderLeftColor: '#045b26',
-                    }}>
-                        <View style={{
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            marginBottom: 8,
-                        }}>
-                            <MaterialCommunityIcons name="alert-circle" size={20} color="#045b26" />
-                            <Text style={{
-                                fontSize: 16,
-                                fontWeight: 'bold',
-                                color: '#000',
-                                fontFamily: 'Jumper',
-                                marginLeft: 8,
-                            }}>
-                                Vaccination Due Soon
-                            </Text>
-                        </View>
-                        <Text style={{
-                            fontSize: 14,
-                            color: '#666',
-                            fontFamily: 'Flink',
-                            lineHeight: 20,
-                        }}>
-                            Max's rabies vaccination is due in 3 days. Schedule an appointment to keep your pet protected.
-                        </Text>
                     </View>
                 </View>
 

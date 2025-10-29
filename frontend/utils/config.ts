@@ -8,8 +8,8 @@ function getDefaultDevBaseUrl(): string {
   if (Platform.OS === 'web') {
     return 'http://localhost:8000/api';
   } else {
-    // For mobile device/Expo, use the computer's network IP address
-    return 'http://192.168.1.13:8000/api';
+    // For mobile (iOS/Android), default to production HTTPS API to avoid local HTTP/ATS issues
+    return 'https://pawthoswebsite-production.up.railway.app/api';
   }
 }
 
@@ -17,7 +17,7 @@ const ENV_BASE = (typeof process !== 'undefined' && (process as any)?.env?.EXPO_
 
 export const API_BASE_URL = __DEV__
   ? (ENV_BASE || getDefaultDevBaseUrl())
-  : (ENV_BASE || 'https://your-production-api.com/api');
+  : (ENV_BASE || 'https://pawthoswebsite-production.up.railway.app/api');
 
 // Helper function to get the correct API URL
 export function getApiUrl(): string {

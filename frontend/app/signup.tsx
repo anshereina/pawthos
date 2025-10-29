@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet, TouchableOpacity, Image, ScrollView, Alert } from "react-native";
+import { View, Text, TextInput, Pressable, ActivityIndicator, StyleSheet, TouchableOpacity, Image, ScrollView, Alert, SafeAreaView } from "react-native";
 import { useFonts } from 'expo-font';
 import { FontAwesome, MaterialIcons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,92 +8,127 @@ import * as auth from '../utils/auth.utils';
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        backgroundColor: "#045b26",
-        padding: 24,
+        backgroundColor: '#f8f9fa',
+    },
+    content: {
+        flex: 1,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 20,
+    },
+    headerContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 24,
+        paddingHorizontal: 4,
+    },
+    backButton: {
+        padding: 10,
+        zIndex: 10,
+    },
+    headerTitle: {
+        color: '#D37F52',
+        fontSize: 25,
+        fontWeight: 'bold',
+        flex: 1,
+        textAlign: 'center',
     },
     title: {
         fontSize: 28,
-        color: "#fff",
+        color: "#045b26",
         fontWeight: 'bold',
-        marginBottom: 4,
+        marginBottom: 8,
         textAlign: 'center',
     },
     subtitle: {
-        fontSize: 14,
-        color: "#e0ffe6",
-        marginBottom: 12,
+        fontSize: 16,
+        color: "#4a7c59",
+        marginBottom: 24,
+        textAlign: 'center',
+    },
+    card: {
+        backgroundColor: '#ffffff',
+        borderRadius: 14,
+        padding: 20,
+        marginBottom: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        shadowOffset: { width: 0, height: 2 },
+        elevation: 2,
     },
     input: {
         flex: 1,
-        fontSize: 14,
+        fontSize: 16,
         color: '#222',
         padding: 0,
-        marginLeft: 8,
-        height: 36,
+        marginLeft: 12,
     },
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
-        borderRadius: 6,
-        marginBottom: 12,
-        width: 280, // smaller width
-        paddingHorizontal: 8,
-        minHeight: 40,
-        paddingVertical: 8,
+        backgroundColor: '#f8f9fa',
+        borderRadius: 12,
+        marginBottom: 16,
+        paddingHorizontal: 16,
+        height: 52,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
     },
     button: {
-        width: 180,
-        paddingVertical: 12,
-        borderRadius: 25,
-        backgroundColor: "#045b26",
+        width: '100%',
+        paddingVertical: 16,
+        borderRadius: 14,
+        backgroundColor: "#D37F52",
         alignItems: "center",
-        marginBottom: 12,
-        marginTop: 8,
-        elevation: 2,
+        marginBottom: 16,
+        elevation: 4,
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.15,
-        shadowRadius: 4,
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.12,
+        shadowRadius: 10,
     },
     buttonText: {
         color: "#fff",
         fontWeight: "bold",
-        fontSize: 14,
+        fontSize: 16,
         letterSpacing: 1,
     },
     link: {
-        color: '#e0ffe6',
+        color: '#4a7c59',
         marginTop: 8,
         textAlign: 'center',
+        fontSize: 14,
     },
     error: {
-        color: '#ffb3b3',
+        color: '#F44336',
         marginBottom: 8,
         textAlign: 'center',
-    },
-    backButton: {
-        position: 'absolute',
-        top: 40,
-        left: 20,
+        fontSize: 14,
     },
     logoRow: {
         flexDirection: 'row',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 24,
+        marginBottom: 32,
+        marginTop: 20,
     },
     logo: {
-        width: 40,
-        height: 40,
-        marginRight: 6,
+        width: 64,
+        height: 64,
+        marginRight: 12,
     },
     logo2: {
-        width: 40,
-        height: 40,
+        width: 64,
+        height: 64,
     },
+    requiredText: {
+        color: '#4a7c59',
+        fontSize: 12,
+        marginTop: 8,
+        textAlign: 'center',
+        fontStyle: 'italic',
+    }
 });
 
 export default function SignupPage({ navigation }) {
@@ -137,14 +172,11 @@ export default function SignupPage({ navigation }) {
         if (!result.success) {
             setError(result.message || "Signup failed");
         } else {
-            // Store email for OTP verification and show success message
-            await AsyncStorage.setItem('otpEmail', email);
             Alert.alert("Success!", result.message || "Account created successfully!", [
                 {
-                    text: "Continue to Verification", 
+                    text: "Go to Login", 
                     onPress: () => {
-                        console.log("Navigating to OTP screen");
-                        navigation.navigate('VerifyOTP');
+                        navigation.navigate('Login');
                     }
                 }
             ]);
@@ -152,12 +184,17 @@ export default function SignupPage({ navigation }) {
     };
 
     return (
-        <View style={styles.container}>
-            <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Welcome')}>
-                <MaterialIcons name="arrow-back" size={28} color="#fff" />
-            </TouchableOpacity>
-            
-            <ScrollView contentContainerStyle={{ alignItems: 'center', paddingVertical: 40 }}>
+        <SafeAreaView style={styles.container}>
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {/* Header */}
+                <View style={styles.headerContainer}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Welcome')}>
+                        <MaterialIcons name="arrow-back" size={28} color="#D37F52" />
+                    </TouchableOpacity>
+                    <Text style={styles.headerTitle}>Sign Up</Text>
+                </View>
+
+                {/* Logo and Title */}
                 <View style={styles.logoRow}>
                     <Image
                         source={require("../assets/images/logo_1.png")}
@@ -172,102 +209,105 @@ export default function SignupPage({ navigation }) {
                 </View>
                 <Text style={styles.title}>Create Account</Text>
                 <Text style={styles.subtitle}>Sign up to get started</Text>
-                
-                {/* Full Name */}
-                <View style={styles.inputRow}>
-                    <MaterialIcons name="person" size={18} color="#045b26" />
-                    <TextInput
-                        placeholder="Full Name *"
-                        placeholderTextColor="#b2d8c5"
-                        value={name}
-                        onChangeText={setName}
-                        style={styles.input}
-                        autoCapitalize="words"
-                    />
+
+                {/* Signup Form Card */}
+                <View style={styles.card}>
+                    {/* Full Name */}
+                    <View style={styles.inputRow}>
+                        <MaterialIcons name="person" size={20} color="#4a7c59" />
+                        <TextInput
+                            placeholder="Full Name *"
+                            placeholderTextColor="#999"
+                            value={name}
+                            onChangeText={setName}
+                            style={styles.input}
+                            autoCapitalize="words"
+                        />
+                    </View>
+
+                    {/* Email */}
+                    <View style={styles.inputRow}>
+                        <MaterialIcons name="email" size={20} color="#4a7c59" />
+                        <TextInput
+                            placeholder="Email Address *"
+                            placeholderTextColor="#999"
+                            value={email}
+                            onChangeText={setEmail}
+                            style={styles.input}
+                            autoCapitalize="none"
+                            keyboardType="email-address"
+                        />
+                    </View>
+
+                    {/* Phone Number */}
+                    <View style={styles.inputRow}>
+                        <MaterialIcons name="phone" size={20} color="#4a7c59" />
+                        <TextInput
+                            placeholder="Phone Number"
+                            placeholderTextColor="#999"
+                            value={phoneNumber}
+                            onChangeText={setPhoneNumber}
+                            style={styles.input}
+                            keyboardType="phone-pad"
+                        />
+                    </View>
+
+                    {/* Address */}
+                    <View style={styles.inputRow}>
+                        <MaterialIcons name="location-on" size={20} color="#4a7c59" />
+                        <TextInput
+                            placeholder="Address"
+                            placeholderTextColor="#999"
+                            value={address}
+                            onChangeText={setAddress}
+                            style={styles.input}
+                            autoCapitalize="words"
+                            multiline={true}
+                            numberOfLines={2}
+                        />
+                    </View>
+
+                    {/* Password */}
+                    <View style={styles.inputRow}>
+                        <MaterialIcons name="lock-outline" size={20} color="#4a7c59" />
+                        <TextInput
+                            placeholder="Password *"
+                            placeholderTextColor="#999"
+                            value={password}
+                            onChangeText={setPassword}
+                            style={styles.input}
+                            secureTextEntry
+                        />
+                    </View>
+
+                    {/* Confirm Password */}
+                    <View style={styles.inputRow}>
+                        <MaterialIcons name="lock-outline" size={20} color="#4a7c59" />
+                        <TextInput
+                            placeholder="Confirm Password *"
+                            placeholderTextColor="#999"
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            style={styles.input}
+                            secureTextEntry
+                        />
+                    </View>
+
+                    <Text style={styles.requiredText}>
+                        * Required fields
+                    </Text>
+
+                    {error && <Text style={styles.error}>{error}</Text>}
+                    
+                    <Pressable style={styles.button} onPress={handleSignup} disabled={loading}>
+                        {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>CREATE ACCOUNT</Text>}
+                    </Pressable>
                 </View>
-
-                {/* Email */}
-                <View style={styles.inputRow}>
-                    <MaterialIcons name="email" size={18} color="#045b26" />
-                    <TextInput
-                        placeholder="Email Address *"
-                        placeholderTextColor="#b2d8c5"
-                        value={email}
-                        onChangeText={setEmail}
-                        style={styles.input}
-                        autoCapitalize="none"
-                        keyboardType="email-address"
-                    />
-                </View>
-
-                {/* Phone Number */}
-                <View style={styles.inputRow}>
-                    <MaterialIcons name="phone" size={18} color="#045b26" />
-                    <TextInput
-                        placeholder="Phone Number"
-                        placeholderTextColor="#b2d8c5"
-                        value={phoneNumber}
-                        onChangeText={setPhoneNumber}
-                        style={styles.input}
-                        keyboardType="phone-pad"
-                    />
-                </View>
-
-                {/* Address */}
-                <View style={styles.inputRow}>
-                    <MaterialIcons name="location-on" size={18} color="#045b26" />
-                    <TextInput
-                        placeholder="Address"
-                        placeholderTextColor="#b2d8c5"
-                        value={address}
-                        onChangeText={setAddress}
-                        style={styles.input}
-                        autoCapitalize="words"
-                        multiline={true}
-                        numberOfLines={2}
-                    />
-                </View>
-
-                {/* Password */}
-                <View style={styles.inputRow}>
-                    <MaterialIcons name="lock-outline" size={18} color="#045b26" />
-                    <TextInput
-                        placeholder="Password *"
-                        placeholderTextColor="#b2d8c5"
-                        value={password}
-                        onChangeText={setPassword}
-                        style={styles.input}
-                        secureTextEntry
-                    />
-                </View>
-
-                {/* Confirm Password */}
-                <View style={styles.inputRow}>
-                    <MaterialIcons name="lock-outline" size={18} color="#045b26" />
-                    <TextInput
-                        placeholder="Confirm Password *"
-                        placeholderTextColor="#b2d8c5"
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                        style={styles.input}
-                        secureTextEntry
-                    />
-                </View>
-
-                <Text style={[styles.subtitle, { fontSize: 12, marginTop: 8, textAlign: 'center' }]}>
-                    * Required fields
-                </Text>
-
-                {error && <Text style={styles.error}>{error}</Text>}
-                
-                <Pressable style={styles.button} onPress={handleSignup} disabled={loading}>
-                    {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>CREATE ACCOUNT</Text>}
-                </Pressable>
                 
                 <Pressable onPress={() => navigation.navigate('Login')}>
-                    <Text style={[styles.link, { textAlign: 'center', marginTop: 8 }]}>Already have an account? Login</Text>
+                    <Text style={styles.link}>Already have an account? Login</Text>
                 </Pressable>
             </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 }
