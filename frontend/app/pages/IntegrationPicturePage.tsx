@@ -494,7 +494,30 @@ export default function IntegrationPicturePage({ onResult, onStartScan, onBack }
         return;
         }
         
-        // Hide technical error details from user
+        // Handle 503 Service Unavailable errors specifically
+        if (response.status === 503) {
+          // FastAPI wraps detail in {"detail": ...} format
+          let serviceError = 'AI service is temporarily unavailable';
+          let guidance = 'The pain assessment service is currently unavailable. Please try again later or contact support.';
+          
+          if (errorData?.detail) {
+            const detail = errorData.detail;
+            if (typeof detail === 'object') {
+              // New format with structured error
+              serviceError = detail.error_message || serviceError;
+              guidance = detail.error_guidance || guidance;
+            } else if (typeof detail === 'string') {
+              // Old format with string message
+              serviceError = detail;
+            }
+          }
+          
+          const userFriendlyMessage = `Service Temporarily Unavailable\n\n${serviceError}\n\n${guidance}`;
+          setErrorMessage(userFriendlyMessage);
+          setErrorModalVisible(true);
+          setIsCheckingImage(false);
+          return;
+        }
         
         // Handle specific error types (400 status with error object)
         if (response.status === 400 && errorData.error && errorData.error_type) {

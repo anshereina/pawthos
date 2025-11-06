@@ -296,6 +296,7 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
     const [petInfo, setPetInfo] = useState<PetData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [exporting, setExporting] = useState(false);
 
     const fetchVaccinationData = async () => {
         try {
@@ -356,81 +357,138 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
     };
 
     const handleExportPdf = async () => {
+        if (exporting) return; // Prevent multiple simultaneous exports
+        
         try {
+            setExporting(true);
+            
             const petName = petInfo?.name || 'Pet';
+            const exportDate = new Date().toLocaleDateString('en-US', { 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            // Enhanced header with better styling
             const headerHtml = `
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <h1 style="margin:0;color:#000;font-size:20px;">Vaccination Card</h1>
-                    <div style="font-size:12px;color:#555;">${new Date().toLocaleString()}</div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:2px solid #045b26;">
+                    <div>
+                        <h1 style="margin:0;color:#045b26;font-size:24px;font-weight:bold;">Vaccination Card</h1>
+                        <p style="margin:4px 0 0 0;color:#666;font-size:12px;">Generated on ${exportDate}</p>
+                    </div>
                 </div>
             `;
 
-            const petInfoHtml = petInfo ? `
-                <div style="border:1px solid #eaeaea;border-radius:8px;padding:12px;margin-bottom:16px;">
-                    <h2 style="margin:0 0 8px 0;color:#045b26;font-size:14px;">Pet Information</h2>
-                    <table style="width:100%;font-size:12px;color:#333;">
-                        <tr><td style="width:120px;font-weight:bold;color:#045b26;">Name:</td><td>${petInfo.name}</td></tr>
-                        <tr><td style="width:120px;font-weight:bold;color:#045b26;">Age:</td><td>${petInfo.date_of_birth ? calculateAge(petInfo.date_of_birth) : 'Unknown'}</td></tr>
-                        <tr><td style="width:120px;font-weight:bold;color:#045b26;">Date of Birth:</td><td>${petInfo.date_of_birth ? formatDate(petInfo.date_of_birth) : 'Unknown'}</td></tr>
-                        <tr><td style="width:120px;font-weight:bold;color:#045b26;">Gender:</td><td>${petInfo.gender || 'Unknown'}</td></tr>
-                    </table>
-                </div>
-            ` : '';
-
-            const rowsHtml = (vaccinationRecords || []).map(r => `
-                <tr>
-                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${formatDate(r.vaccination_date)}</td>
-                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.vaccine_name}</td>
-                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.batch_lot_no || 'N/A'}</td>
-                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.expiration_date ? formatDate(r.expiration_date) : 'N/A'}</td>
-                    <td style="padding:10px;border:1px solid #f0f0f0;word-wrap:break-word;">${r.veterinarian || 'N/A'}</td>
+            // Enhanced table with better formatting
+            const rowsHtml = (vaccinationRecords || []).map((r, index) => `
+                <tr style="${index % 2 === 0 ? 'background:#FFFFFF;' : 'background:#F8FFF8;'}">
+                    <td style="padding:12px;border:1px solid #e0e0e0;word-wrap:break-word;text-align:center;">${formatDate(r.vaccination_date)}</td>
+                    <td style="padding:12px;border:1px solid #e0e0e0;word-wrap:break-word;">${r.vaccine_name || 'N/A'}</td>
+                    <td style="padding:12px;border:1px solid #e0e0e0;word-wrap:break-word;text-align:center;">${r.batch_lot_no || 'N/A'}</td>
+                    <td style="padding:12px;border:1px solid #e0e0e0;word-wrap:break-word;text-align:center;">${formatDate(r.expiration_date)}</td>
+                    <td style="padding:12px;border:1px solid #e0e0e0;word-wrap:break-word;text-align:center;">${r.veterinarian || 'N/A'}</td>
                 </tr>
             `).join('');
 
             const tableHtml = `
-                <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;">
-                    <thead>
-                        <tr style="background:#e0ffe6;color:#045b26;">
-                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Date of Vaccination</th>
-                            <th style="padding:10px;border:1px solid #d9f2dc;width:25%;word-wrap:break-word;">Vaccine Used</th>
-                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Lot No./ Batch No.</th>
-                            <th style="padding:10px;border:1px solid #d9f2dc;width:20%;word-wrap:break-word;">Date of next Vaccination</th>
-                            <th style="padding:10px;border:1px solid #d9f2dc;width:15%;word-wrap:break-word;">Vet. Lic No. PTR</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${rowsHtml || `<tr><td colspan="5" style="padding:12px;text-align:center;color:#666;">No vaccination records found.</td></tr>`}
-                    </tbody>
-                </table>
+                <div style="margin-top:16px;">
+                    <h2 style="margin:0 0 16px 0;color:#045b26;font-size:18px;font-weight:bold;">Vaccination History</h2>
+                    <table style="width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;border:2px solid #045b26;">
+                        <thead>
+                            <tr style="background:#045b26;color:#FFFFFF;">
+                                <th style="padding:12px;border:1px solid #045b26;width:20%;font-weight:bold;text-align:center;">Date of Vaccination</th>
+                                <th style="padding:12px;border:1px solid #045b26;width:25%;font-weight:bold;text-align:left;">Vaccine Used</th>
+                                <th style="padding:12px;border:1px solid #045b26;width:20%;font-weight:bold;text-align:center;">Lot No./ Batch No.</th>
+                                <th style="padding:12px;border:1px solid #045b26;width:20%;font-weight:bold;text-align:center;">Date of Next Vaccination</th>
+                                <th style="padding:12px;border:1px solid #045b26;width:15%;font-weight:bold;text-align:center;">Vet. Lic No. PTR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${rowsHtml || `<tr><td colspan="5" style="padding:20px;text-align:center;color:#666;font-style:italic;">No vaccination records found.</td></tr>`}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+            // Footer
+            const footerHtml = `
+                <div style="margin-top:32px;padding-top:16px;border-top:1px solid #e0e0e0;text-align:center;color:#666;font-size:11px;">
+                    <p style="margin:0;">This document was generated by Pawthos Pet Management System</p>
+                    <p style="margin:4px 0 0 0;">For questions or concerns, please contact your veterinarian</p>
+                </div>
             `;
 
             const html = `
+                <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                    <title>Vaccination Card - ${petName}</title>
+                    <style>
+                        @media print {
+                            body { margin: 0; padding: 16px; }
+                        }
+                    </style>
                 </head>
-                <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:16px;">
+                <body style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;padding:20px;max-width:800px;margin:0 auto;color:#333;">
                     ${headerHtml}
-                    ${petInfoHtml}
                     ${tableHtml}
+                    ${footerHtml}
                 </body>
                 </html>
             `;
 
-            const { uri } = await Print.printToFileAsync({ html });
+            // Generate PDF
+            const { uri } = await Print.printToFileAsync({ 
+                html,
+                base64: false,
+                width: 612, // US Letter width in points
+                height: 792, // US Letter height in points
+            });
 
-            const fileName = `Vaccination_Card_${petName.replace(/[^a-z0-9_-]/gi, '_')}_${Date.now()}.pdf`;
-            const dest = `${(FileSystem as any).documentDirectory || ''}${fileName}`;
+            // Create a clean filename
+            const sanitizedPetName = petName.replace(/[^a-z0-9_-]/gi, '_').replace(/_+/g, '_');
+            const timestamp = Date.now();
+            const fileName = `Vaccination_Card_${sanitizedPetName}_${timestamp}.pdf`;
+            
+            // Get the document directory
+            const documentDir = FileSystem.documentDirectory || FileSystem.cacheDirectory || '';
+            const dest = `${documentDir}${fileName}`;
+            
+            // Move the file to the final destination
             await FileSystem.moveAsync({ from: uri, to: dest });
 
+            // Share/download the PDF
             if (await Sharing.isAvailableAsync()) {
-                await Sharing.shareAsync(dest, { mimeType: 'application/pdf', dialogTitle: 'Share Vaccination Card PDF' });
+                await Sharing.shareAsync(dest, { 
+                    mimeType: 'application/pdf', 
+                    dialogTitle: 'Download Vaccination Card PDF',
+                    UTI: 'com.adobe.pdf'
+                });
+                Alert.alert(
+                    'PDF Generated Successfully', 
+                    `Vaccination card PDF has been generated. Use the share options to save it to your device.`,
+                    [{ text: 'OK' }]
+                );
             } else {
-                Alert.alert('Exported', `PDF saved to: ${dest}`);
+                Alert.alert(
+                    'PDF Exported', 
+                    `PDF has been saved to:\n${dest}\n\nYou can find it in your app's documents folder.`,
+                    [{ text: 'OK' }]
+                );
             }
         } catch (e) {
             console.error('Export PDF error:', e);
-            Alert.alert('Export failed', 'Could not export vaccination card to PDF.');
+            Alert.alert(
+                'Export Failed', 
+                'Could not export vaccination card to PDF. Please try again.',
+                [{ text: 'OK' }]
+            );
+        } finally {
+            setExporting(false);
         }
     };
 
@@ -438,16 +496,40 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
         onNavigate('Pet profile');
     };
 
-    const formatDate = (dateString: string) => {
+    const formatDate = (dateString: string | null | undefined): string => {
+        if (!dateString) return 'N/A';
+        
         try {
-            const date = new Date(dateString);
+            // Handle various date formats
+            let date: Date;
+            
+            // If it's already a Date object
+            if (dateString instanceof Date) {
+                date = dateString;
+            } else {
+                // Try parsing the date string
+                date = new Date(dateString);
+                
+                // Check if date is valid
+                if (isNaN(date.getTime())) {
+                    // Try parsing as ISO format or other common formats
+                    const parsed = Date.parse(dateString);
+                    if (isNaN(parsed)) {
+                        return 'N/A';
+                    }
+                    date = new Date(parsed);
+                }
+            }
+            
+            // Format the date
             return date.toLocaleDateString('en-US', {
                 month: '2-digit',
                 day: '2-digit',
                 year: 'numeric'
             });
-        } catch {
-            return dateString;
+        } catch (error) {
+            console.error('Date formatting error:', error, 'for date:', dateString);
+            return 'N/A';
         }
     };
 
@@ -498,46 +580,6 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
     return (
         <View style={styles.container}>
             <ScrollView style={styles.content}>
-                {/* Modern Pet Information Section */}
-                {petInfo && (
-                <View style={styles.petInfoSection}>
-                    <View style={styles.petInfoGradient} />
-                    <View style={styles.petInfoHeader}>
-                        <View style={styles.petInfoIconContainer}>
-                            <MaterialCommunityIcons name="paw" size={24} color="#045b26" />
-                        </View>
-                        <Text style={styles.petInfoTitle}>Pet Information</Text>
-                    </View>
-                    
-                    <View style={styles.petInfoRow}>
-                        <View style={styles.petInfoColumn}>
-                            <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Name</Text>
-                                    <Text style={styles.petInfoValue}>{petInfo.name}</Text>
-                            </View>
-                            <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Age</Text>
-                                    <Text style={styles.petInfoValue}>
-                                        {petInfo.date_of_birth ? calculateAge(petInfo.date_of_birth) : 'Unknown'}
-                                    </Text>
-                            </View>
-                        </View>
-                        <View style={styles.petInfoColumn}>
-                            <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Birth Date</Text>
-                                    <Text style={styles.petInfoValue}>
-                                        {petInfo.date_of_birth ? formatDate(petInfo.date_of_birth) : 'Unknown'}
-                                    </Text>
-                            </View>
-                            <View style={styles.petInfoItem}>
-                                <Text style={styles.petInfoLabel}>Gender</Text>
-                                    <Text style={styles.petInfoValue}>{petInfo.gender || 'Unknown'}</Text>
-                            </View>
-                        </View>
-                    </View>
-                </View>
-                )}
-
                 {/* Modern Vaccination Records Section */}
                 <View style={styles.vaccinationSection}>
                     <View style={styles.vaccinationSectionHeader}>
@@ -547,9 +589,19 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
                             </View>
                             <Text style={styles.vaccinationSectionTitle}>Vaccination Records</Text>
                         </View>
-                        <TouchableOpacity style={styles.exportButton} onPress={handleExportPdf}>
-                            <MaterialIcons name="file-download" size={14} color="#FFFFFF" />
-                            <Text style={styles.exportButtonText}>Export</Text>
+                        <TouchableOpacity 
+                            style={[styles.exportButton, exporting && { opacity: 0.6 }]} 
+                            onPress={handleExportPdf}
+                            disabled={exporting}
+                        >
+                            {exporting ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <MaterialIcons name="file-download" size={14} color="#FFFFFF" />
+                            )}
+                            <Text style={styles.exportButtonText}>
+                                {exporting ? 'Exporting...' : 'Export'}
+                            </Text>
                         </TouchableOpacity>
                     </View>
 
@@ -571,13 +623,13 @@ export default function PetVacCardPage({ onNavigate, petId }: { onNavigate: (pag
                                         {formatDate(record.vaccination_date)}
                                     </Text>
                                     <Text style={styles.tableCell}>
-                                        {record.vaccine_name}
+                                        {record.vaccine_name || 'N/A'}
                                     </Text>
                                     <Text style={styles.tableCell}>
                                         {record.batch_lot_no || 'N/A'}
                                     </Text>
                                     <Text style={styles.tableCell}>
-                                        {record.expiration_date ? formatDate(record.expiration_date) : 'N/A'}
+                                        {formatDate(record.expiration_date)}
                                     </Text>
                                     <Text style={[styles.tableCell, styles.lastCell]}>
                                         {record.veterinarian || 'N/A'}
